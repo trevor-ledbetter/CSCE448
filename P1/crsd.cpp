@@ -19,7 +19,7 @@ using namespace std;
  * 
  * The base of the code was adapted from Dr. Tanzir's 313 class
  * 
-**/
+ * */
 
 //
 // ─── GLOBAL VARS ────────────────────────────────────────────────────────────────
@@ -44,7 +44,13 @@ struct Room {
 array<Room, MAX_ROOM> room_db;
 int totalRooms = 0;
 
-void handle_create_room (int _client_socket, string _room_name) {
+/**
+ * Handles client requests to open a new room and sends appropriate response
+ * 
+ * @param _client_socket    File descriptor refering to client slave socket
+ * @param _room_name        Name to give new room
+ * */
+void room_creation_handler (int _client_socket, string _room_name) {
     // Ensure room creation is valid
     Status procStat = FAILURE_UNKNOWN;
     if (totalRooms >= MAX_ROOM) {
@@ -82,14 +88,19 @@ void handle_create_room (int _client_socket, string _room_name) {
     
 }
 
-void* connection_handler (int arg){
-    int client_socket = arg;
 
-    printf("Connected to client socket %d\n", client_socket);
+
+/**
+ * Main connection handling function that delegates operations to other functions based on message received
+ * 
+ * @param _client_socket Client slave socket file descriptor
+ * */
+void* connection_handler (int _client_socket){
+    printf("Connected to client socket %d\n", _client_socket);
     
     char buf [MAX_DATA];
     while (1){
-        if (recv (client_socket, buf, sizeof (buf), 0) < 0){
+        if (recv (_client_socket, buf, sizeof (buf), 0) < 0){
             perror ("server: Receive failure");    
             exit (0);
         }
@@ -98,14 +109,21 @@ void* connection_handler (int arg){
         num *= 2;
         if (num == 0)
             break;
-        if (send(client_socket, &num, sizeof (num), 0) == -1){
+        if (send(_client_socket, &num, sizeof (num), 0) == -1){
             perror("send");
             break;
         }
     }
     printf("Closing client socket\n");
-	close(client_socket);
+	close(_client_socket);
 }
+
+/**
+ * Main server function that listens for connections and has the main accept loop
+ * Creates threads for each incoming connection
+ * 
+ * @param port Port number as a char which determines which port to listen for incoming connections
+ * */
 
 int server (char* port)
 {
