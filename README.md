@@ -16,6 +16,18 @@ The overall design will involve the following:
 
 6. If a `delete` request is received, the server will check if the specified chatroom name exists and if so delete it.
 
+7. Responses from the server will begin with a `Status` byte followed by any additional information.
+
+8. Commands from a client will be determined by the server with the first byte of the message, where a char will describe the requested action. The action values are defined in the *Action Values* section.
+
+### Action Values
+| Action | Value |
+| ------ | ----- |
+| CREATE | 1     |
+| JOIN   | 2     |
+| LIST   | 3     |
+| DELETE | 4     |
+
 ### Server Implementation
 
 The server will have the following:
@@ -24,6 +36,8 @@ The server will have the following:
 2. The `server()` function will exist to handle the main grunt of the server, setting up the master socket to listen for connections. A loop will exist to handle connections when they are made and will spawn a thread that runs the `connection_handler()` will then execute server-side logic based on the received message from the client.
 
 3. The `connection_handler()` function will exist as a threaded function to handle each message/request from the clients separate from the main socket and lets the main server process handle more incoming requests. These threads will parse the received messages and will execute the correct functions associated with each message's intent.
+
+4. The `room_creation_handler()` function will handle any requests to create a room and send the appropriate response to the sending client.
 
 
 ### Client Implementation
