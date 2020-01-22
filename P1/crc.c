@@ -108,8 +108,8 @@ int connect_to(const char *host, const int port)
 		fprintf(stderr, "connect error!\n");
 		return -1;
 	}
-	
-	printf("Sucessfully connected to, %s", host);
+
+	printf("Sucessfully connected to, %s\n", host);
 	return sockfd;
 	
 	/*int sockfd = -1;
@@ -173,7 +173,7 @@ struct Reply process_command(const int sockfd, char* command)
 	// reply.port = port;
 	// 
 	// "number" and "port" variables are just an integer variable
-	// and can be initialized using the message fomr the server.
+	// and can be initialized using the message from the server.
 	//
 	// For another example, if a given command is "CREATE room1"
 	// and the server failed to create the chatroom becuase it
@@ -195,6 +195,83 @@ struct Reply process_command(const int sockfd, char* command)
     // "list" is a string that contains a list of chat rooms such 
     // as "r1,r2,r3,"
 	// ------------------------------------------------------------
+
+
+	//Parse the command into two strings: action and roomName
+	char* action;
+	char* roomName;
+	int lengthOfCommand = strlen(command);
+	//printf("length of command is: %d\n", lengthOfCommand);
+	char commandArray[lengthOfCommand];
+	strcpy(commandArray, command);
+
+	char* token = strtok(commandArray, " ");
+	action = token;
+
+	int count = 0;
+	while(token != NULL)
+	{
+		//printf("%s\n", token);
+		if(count == 1) //second argument
+		{
+			roomName = token;
+		}
+
+        token = strtok(NULL, " "); 
+		count++;
+	}
+
+	//Test the input for errors
+	printf("count is: %d\n", count);
+	if(count < 1 || count > 2)
+	{
+		printf("error with number of arguments in client\n");
+		struct Reply reply_error;
+		reply_error.status = FAILURE_INVALID;
+		return reply_error;
+	}
+
+	char* firstCharacter;
+	if(strcmp(action,"CREATE") == 0){
+		firstCharacter = "0";
+	}else if(strcmp(action,"DELETE") == 0){
+		firstCharacter = "1";
+	}else if(strcmp(action,"JOIN") == 0){
+		firstCharacter = "2";
+	}else if(strcmp(action,"LIST") == 0){
+		firstCharacter = "3";
+	}else{
+		printf("error with action in client\n");
+		struct Reply reply_error;
+		reply_error.status = FAILURE_INVALID;
+		return reply_error;
+	}
+
+	char message[1+strlen(roomName)];
+	//copy the firstCharacter then roomName to message
+	strcpy(message, firstCharacter);
+	strcat(message, roomName);
+	printf("message: %s\n", message);
+	//send it
+	int lengthOfMessage = strlen(message);
+	char* messageP = message;
+	if (send(sockfd, messageP, lengthOfMessage, 0) < 0){
+		printf("error with send in client\n");
+		struct Reply reply_error;
+		reply_error.status = FAILURE_INVALID;
+		return reply_error;
+	}
+	printf("here3");
+
+
+
+
+
+
+
+
+
+
 
 	// REMOVE below code and write your own Reply.
 	struct Reply reply;
