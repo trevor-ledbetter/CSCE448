@@ -17,6 +17,19 @@ int connect_to(const char *host, const int port);
 struct Reply process_command(const int sockfd, char* command);
 void process_chatmode(const char* host, const int port);
 
+
+char* integerToCString(int num){
+	int digits = 0;
+	int n = num;
+	while(n!=0){
+		n/=10;
+		digits++;
+	}
+	char* str = (char*)malloc(sizeof(char)*digits);
+	sprintf(str, "%d", num);
+}
+
+
 int main(int argc, char** argv) 
 {
 	if (argc != 3) {
@@ -79,17 +92,22 @@ int connect_to(const char *host, const int port)
 	int sockfd = -1;
 
 	// first, load up address structs with getaddrinfo():
-
 	memset(&hints, 0, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
+	
+	//Convert int port to a char[]
+	int digits = 0;
+	int n = port;
+	while(n!=0){
+		n/=10;
+		digits++;
+	}
+	char portChar[digits];
+	sprintf(portChar, "%d", port);
+
 	int status;
-	//getaddrinfo("www.example.com", "3490", &hints, &res);
-	char* port_char = (char*)&port;
-	printf("port is: %s", port_char);
-	printf("\n");
-	char* c = "5113";
-	if ((status = getaddrinfo(host, c, &hints, &res)) != 0) {
+	if ((status = getaddrinfo(host, portChar, &hints, &res)) != 0) {
         fprintf(stderr, "getaddrinfo error!\n");
         return -1;
     }
@@ -201,7 +219,6 @@ struct Reply process_command(const int sockfd, char* command)
 	char* action;
 	char* roomName;
 	int lengthOfCommand = strlen(command);
-	//printf("length of command is: %d\n", lengthOfCommand);
 	char commandArray[lengthOfCommand];
 	strcpy(commandArray, command);
 
@@ -211,7 +228,6 @@ struct Reply process_command(const int sockfd, char* command)
 	int count = 0;
 	while(token != NULL)
 	{
-		//printf("%s\n", token);
 		if(count == 1) //second argument
 		{
 			roomName = token;
@@ -221,8 +237,8 @@ struct Reply process_command(const int sockfd, char* command)
 		count++;
 	}
 
-	//Test the input for errors
-	printf("count is: %d\n", count);
+	//Test the input for errors and if none, convert the command to an 
+	//int that will be sent as the first char to the server
 	if(count < 1 || count > 2)
 	{
 		printf("error with number of arguments in client\n");
@@ -247,12 +263,12 @@ struct Reply process_command(const int sockfd, char* command)
 		return reply_error;
 	}
 
-	char message[1+strlen(roomName)];
 	//copy the firstCharacter then roomName to message
+	char message[1+strlen(roomName)];
 	strcpy(message, firstCharacter);
 	strcat(message, roomName);
-	printf("message: %s\n", message);
-	//send it
+
+	//send message to the server using send()
 	int lengthOfMessage = strlen(message);
 	char* messageP = message;
 	if (send(sockfd, messageP, lengthOfMessage, 0) < 0){
@@ -261,17 +277,11 @@ struct Reply process_command(const int sockfd, char* command)
 		reply_error.status = FAILURE_INVALID;
 		return reply_error;
 	}
-	printf("here3");
 
-
-
-
-
-
-
-
-
-
+	//TO DO################################################################
+	//receive a reponse from the server
+	//convert to a Reply type and return
+	//TO DO################################################################
 
 	// REMOVE below code and write your own Reply.
 	struct Reply reply;
@@ -319,4 +329,7 @@ void process_chatmode(const char* host, const int port)
     //    terminate the client program by pressing CTRL-C (SIGINT)
 	// ------------------------------------------------------------
 }
+
+
+
 
