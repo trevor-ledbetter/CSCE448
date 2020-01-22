@@ -9,8 +9,6 @@
 #include <string.h>
 #include "interface.h"
 
-#include <string>
-
 
 /*
  * TODO: IMPLEMENT BELOW THREE FUNCTIONS
@@ -251,13 +249,13 @@ struct Reply process_command(const int sockfd, char* command)
 
 	char* firstCharacter;
 	if(strcmp(action,"CREATE") == 0){
-		*firstCharacter = '0';
+		firstCharacter = "0";
 	}else if(strcmp(action,"DELETE") == 0){
-		*firstCharacter = '1';
+		firstCharacter = "1";
 	}else if(strcmp(action,"JOIN") == 0){
-		*firstCharacter = '2';
+		firstCharacter = "2";
 	}else if(strcmp(action,"LIST") == 0){
-		*firstCharacter = '3';
+		firstCharacter = "3";
 	}else{
 		printf("error with action in client\n");
 		struct Reply reply_error;
