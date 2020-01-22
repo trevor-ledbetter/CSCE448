@@ -9,6 +9,8 @@
 #include <string.h>
 #include "interface.h"
 
+#include <string>
+
 
 /*
  * TODO: IMPLEMENT BELOW THREE FUNCTIONS
@@ -85,11 +87,10 @@ int connect_to(const char *host, const int port)
 	hints.ai_socktype = SOCK_STREAM;
 	int status;
 	//getaddrinfo("www.example.com", "3490", &hints, &res);
-	char* port_char = (char*)&port;
+	const char* port_char = std::to_string(port).c_str();
 	printf("port is: %s", port_char);
 	printf("\n");
-	char* c = "5113";
-	if ((status = getaddrinfo(host, c, &hints, &res)) != 0) {
+	if ((status = getaddrinfo(host, port_char, &hints, &res)) != 0) {
         fprintf(stderr, "getaddrinfo error!\n");
         return -1;
     }
