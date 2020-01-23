@@ -18,6 +18,7 @@
 #include <thread>
 #include <array>
 #include <iostream>
+#include <vector>
 using namespace std;
 
 /**
@@ -27,12 +28,13 @@ using namespace std;
  * */
 
 //
-// ─── GLOBAL VARS ────────────────────────────────────────────────────────────────
+// ─── SHARED GLOBAL VARS ─────────────────────────────────────────────────────────
 //
 
 // Constants
 const size_t MAX_MEMBER = 64;
 const size_t MAX_ROOM   = 128;
+const size_t MAX_NAME   = 32;
 const int    PORT_START = 90000;
 const char*  SHARED_MEMORY_NAME = "/chatroom_DB_mem";
 
@@ -41,18 +43,16 @@ char    *shared_start = nullptr;
 sem_t   *shared_sem   = nullptr;
 char    *shared_data  = nullptr;
 
-// Process Identifiers
-string serverName = "";
-
 //
 // ─── ROOM DATABASE ──────────────────────────────────────────────────────────────
 //
 
 struct Room {
-    string room_name;
+    char room_name[MAX_NAME];
     int port_num;
     int num_members;
     array<int, MAX_MEMBER> slave_socket;
+    pid_t chatroom_process;
 };
 
 // Using stl array for ease
@@ -60,6 +60,10 @@ typedef array<Room, MAX_ROOM> roomDB_t;
 int totalRooms = 0;
 
 const off_t SHARED_MEMORY_SIZE = sizeof(sem_t) + sizeof(roomDB_t);
+
+// Forward declarations
+void chatroom_send_handler(int _client_socket, string _msg);
+
 
 /**
  * Handles client requests to open a new room and sends appropriate response to requesting client
@@ -83,7 +87,7 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
     cout << "before already exists" << endl;
 
     for (auto It = room_db.begin(); It != room_db.end(); It++) {
-        if (It->room_name == _room_name) {
+        if (string(It->room_name) == _room_name) {
             perror("Requested room name already exists.");
             reply.status = FAILURE_ALREADY_EXISTS;
             return reply;
@@ -95,14 +99,19 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
     for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
         if (room_db[Idx].room_name == "") {
             cout << "1" << endl;
-            room_db[Idx].room_name = _room_name;
+            strncpy(room_db[Idx].room_name, _room_name.c_str(), MAX_NAME);
             cout << "2" << endl;
+            // Initialize db entry
             room_db[Idx].num_members = 0;
             cout << "3" << endl;
             room_db[Idx].port_num = PORT_START + Idx;
             cout << "4" << endl;
             room_db[Idx].slave_socket.fill(-1);
             cout << "5" << endl;
+            room_db[Idx].chatroom_process = -1;
+
+            // Create process
+            // if (fork() == 0) { // Parent
             reply.status = SUCCESS;
             cout << "before reply" << endl;
             return reply;
@@ -119,35 +128,52 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
  * @param _client_socket    File descriptor referring to client slave socket
  * @param _room_name        Name of room to delete
  * */
-void room_deletion_handler_master(int _client_socket, string _room_name) {
+void room_deletion_handler(int _client_socket, string _room_name) {
     // Get reference to data
     roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
+    
     // Ensure room can be deleted
     Status procStat = FAILURE_UNKNOWN;
-    int roomIdx = -1;
-    for (int Idx = 0; Idx < MAX_ROOM; Idx++) {
-        if (room_db[Idx].room_name == _room_name) {
-            roomIdx = Idx;
+    Room* roomPending = nullptr;
+    for (Room currRoom : room_db) {
+        if (string(currRoom.room_name) == _room_name) {
+            roomPending = &currRoom;
             break;
         }
     }
-    
-    if (roomIdx == -1) {
+    if (roomPending == nullptr) {
         perror("Could not find room with specified name");
         procStat = FAILURE_NOT_EXISTS;
         send(_client_socket, &procStat, sizeof(Status), 0);
         return;
     }
 
+    // Send exit messages on separate threads
+    vector<thread> senderThreads;
     string exitMsg = "Chat room being deleted!";
-
-    for (int Idx = 0; Idx < room_db[roomIdx].num_members; Idx++) {
-        int currentSocket = room_db[roomIdx].slave_socket[Idx];
+    for (auto It = roomPending->slave_socket.begin(); It != roomPending->slave_socket.end(); It++) {
+        if (*It != -1) {
+            thread sendThread(chatroom_send_handler, *It, exitMsg);
+            senderThreads.push_back(std::move(sendThread));
+        }
     }
-}
 
-void room_deletion_handler_slave() {
-    
+    // Join threads then delete room from database
+    for (auto &trd : senderThreads) {
+        trd.join();
+    }
+    // End room process
+    kill(roomPending->chatroom_process, SIGTERM);
+    // Critical Section
+    sem_wait(shared_sem);
+    roomPending->chatroom_process = -1;
+    roomPending->num_members = 0;
+    roomPending->port_num = -1;
+    strcpy(roomPending->room_name, "");
+    roomPending->slave_socket.fill(-1);
+    sem_post(shared_sem);
+    // End critical section
+
 }
 
 /**
@@ -222,12 +248,57 @@ void lobby_connection_handler (int _client_socket){
 }
 
 /**
- * Chatroom connection handler that delegates connections from clients to a chat room server process
+ * Chatroom connection sender that delegates outgoing on a socket
  * 
  * @param _client_socket    Client slave socket file descriptor
  * */
-void chatroom_connection_handler(int _client_socket) {
-    
+void chatroom_send_handler(int _client_socket, string _msg) {
+    printf("Connected to Chatroom:Send on slave socket: %d", _client_socket);
+
+    // Add message to buffer
+    char buf [MAX_DATA];
+    strncpy(buf, _msg.c_str(), MAX_DATA);
+
+    // Send to client
+    if (send(_client_socket, buf, sizeof(buf), 0) < 0) {
+        fprintf(stderr, "server: Send Failure to Socket %d", _client_socket);
+    }
+}
+
+/**
+ * Chatroom connection listener that delegates incoming messages on a socket
+ * 
+ * @param _client_socket    Client slave socket file descriptor
+ * @param _room_ptr         Pointer to Room object in shared memory
+ * */
+void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
+    printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);
+
+    char buf [MAX_DATA];
+    // Keep listening for incoming message
+    while(1) {
+        if (recv (_client_socket, buf, sizeof (buf), 0) < 0){
+            perror ("server: Receive failure");    
+            exit (0);
+        }
+
+        // Send message to other clients
+        for (int currSocket : _room_ptr->slave_socket) {
+            if (currSocket != -1) {
+                thread sendThread(chatroom_send_handler, currSocket, string(buf));
+                sendThread.detach();
+            }
+        }
+    }
+    printf("No longer connected to client on socket: %d. Closing...", _client_socket);
+    close(_client_socket);
+    _room_ptr->num_members -= 1;
+    for (int &currSock : _room_ptr->slave_socket) {
+        if (currSock == _client_socket) {
+            currSock = -1;
+            break;
+        }
+    }
 }
 
 /**
@@ -236,7 +307,6 @@ void chatroom_connection_handler(int _client_socket) {
  * 
  * @param port Port number as a char which determines which port to listen for incoming connections
  * */
-
 int server (char* port)
 {
 	int sockfd;  // listen on sock_fd
@@ -288,7 +358,14 @@ int server (char* port)
     return 0;
 }
 
-void chatroom_server(char* port) {
+/**
+ * Slave chatroom server function that listens for connections and has the main accept loop
+ * Creates threads for each incoming connection
+ * 
+ * @param port          Port number as a char which determines which port to listen for incoming connections
+ * @param _room_ptr     Pointer to room in shared memory
+ * */
+void chatroom_server(char* port, Room* _room_ptr) {
     int sockfd;  // listen on sock_fd
     struct addrinfo hints, *serv;
     struct sockaddr_storage their_addr; // connector's address information
@@ -329,7 +406,7 @@ void chatroom_server(char* port) {
 
             continue;
         }
-        thread slave_thread(chatroom_connection_handler, slave_socket);
+        thread slave_thread(chatroom_listen_handler, slave_socket, _room_ptr);
         slave_thread.detach();
     }
 
@@ -385,7 +462,17 @@ int main (int ac, char ** av)
         shared_data = shared_start + sizeof(sem_t);
         shared_sem = (sem_t*)shared_start;
         printf("TEST2: %d", reinterpret_cast<roomDB_t*>(shared_data)->at(0).num_members);
-        chatroom_server(av[1]);
+
+        roomDB_t* db_ptr = reinterpret_cast<roomDB_t*>(shared_data);
+        Room* process_chatroom = nullptr;
+
+        for (auto It = db_ptr->begin(); It != db_ptr->end(); It++) {
+            if (It->port_num == atoi(av[1])) {
+                process_chatroom = It;
+            }
+        }
+
+        chatroom_server(av[1], process_chatroom);
     } else {
         printf("Starting lobby server\n");
 

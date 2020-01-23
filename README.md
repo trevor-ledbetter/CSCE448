@@ -8,7 +8,7 @@ The overall design will involve the following:
 
 2. A client will connect to the server via this main socket, and a slave socket will be created to handle the rest of the interaction.
 
-3. If a `create` request is received, the server references a database of created chatrooms and if it does not exist, creates a new chatroom with the specifed name, a unique master socket, and thread through which messages will be handled with other clients.
+3. If a `create` request is received, the server references a database of created chatrooms and if it does not exist, creates a new chatroom with the specifed name, a unique master socket, and process through which messages will be handled with other clients.
 
 4. If a `join` request is received, the server will check if the specifed name exists and return the necessary information for the client to connect to it.
 
@@ -23,10 +23,10 @@ The overall design will involve the following:
 ### Action Values
 | Action | Value |
 | ------ | ----- |
-| CREATE | 1     |
+| CREATE | 0     |
+| DELETE | 1     |
 | JOIN   | 2     |
 | LIST   | 3     |
-| DELETE | 4     |
 
 ### Server Implementation
 
@@ -37,10 +37,13 @@ The server will have the following:
 
 3. The `connection_handler()` function will exist as a threaded function to handle each message/request from the clients separate from the main socket and lets the main server process handle more incoming requests. These threads will parse the received messages and will execute the correct functions associated with each message's intent.
 
-4. The `room_creation_handler()` function will handle any requests to create a room and send the appropriate response to the sending client.
+4. The `room_creation_handler()` function will handle any requests to create a room and send the appropriate response to the sending client. A room will consist of a forked process which runs logic specific to chatrooms.
 
 
 ### Client Implementation
 
 The client program will have the following:
 1. 
+
+### Room Data Structure
+- `slave_socket[]` Contains an array of all connected clients' socket file descriptors or -1 if the entry is not connected to a client
