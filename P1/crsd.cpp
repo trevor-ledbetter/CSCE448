@@ -12,7 +12,7 @@
 #include <string>
 #include <thread>
 #include <array>
-
+#include <iostream>
 using namespace std;
 
 /**
@@ -82,7 +82,7 @@ void handle_create_room (int _client_socket, string _room_name) {
     
 }
 
-void* connection_handler (int arg){
+/*void* connection_handler (int arg){
     int client_socket = arg;
 
     printf("Connected to client socket %d\n", client_socket);
@@ -100,6 +100,80 @@ void* connection_handler (int arg){
             break;
         if (send(client_socket, &num, sizeof (num), 0) == -1){
             perror("send");
+            break;
+        }
+    }
+    printf("Closing client socket\n");
+	close(client_socket);
+}*/
+
+// ------------------------------------------------------------
+// GUIDE 3:
+// Then, you should create a variable of Reply structure
+// provided by the interface and initialize it according to
+// the result.
+//
+// For example, if a given command is "JOIN room1"
+// and the server successfully created the chatroom,
+// the server will reply a message including information about
+// success/failure, the number of members and port number.
+// By using this information, you should set the Reply variable.
+// the variable will be set as following:
+//
+// Reply reply;
+// reply.status = SUCCESS;
+// reply.num_member = number;
+// reply.port = port;
+// 
+// "number" and "port" variables are just an integer variable
+// and can be initialized using the message from the server.
+//
+// For another example, if a given command is "CREATE room1"
+// and the server failed to create the chatroom becuase it
+// already exists, the Reply varible will be set as following:
+//
+// Reply reply;
+// reply.status = FAILURE_ALREADY_EXISTS;
+// 
+// For the "LIST" command,
+// You are suppose to copy the list of chatroom to the list_room
+// variable. Each room name should be seperated by comma ','.
+// For example, if given command is "LIST", the Reply variable
+// will be set as following.
+//
+// Reply reply;
+// reply.status = SUCCESS;
+// strcpy(reply.list_room, list);
+// 
+// "list" is a string that contains a list of chat rooms such 
+// as "r1,r2,r3,"
+// ------------------------------------------------------------
+void* connection_handler (int arg){
+    int client_socket = arg;
+
+    printf("Connected to client socket %d\n", client_socket);
+    
+    char buf[MAX_DATA];
+    while (1){
+        if (recv (client_socket, buf, sizeof(buf), 0) < 0){
+            perror ("server: Receive failure");    
+            exit (0);
+        }else{
+            printf("Message recieved is: %s\n", buf);
+            struct Reply reply;
+            reply.status = SUCCESS;
+	        reply.num_member = 5;
+	        reply.port = 1024;
+
+            int size = sizeof(reply) + 1; //take away +1???
+            char* msgBuf = new char[size];
+            memcpy(msgBuf, &reply, sizeof(reply));
+
+            if (send(client_socket, msgBuf, sizeof(msgBuf), 0) == -1){
+                perror("send");
+                break;
+            }
+            delete msgBuf;
             break;
         }
     }
