@@ -9,8 +9,6 @@
 #include <string.h>
 #include "interface.h"
 
-#include <string>
-
 
 /*
  * TODO: IMPLEMENT BELOW THREE FUNCTIONS
@@ -18,18 +16,6 @@
 int connect_to(const char *host, const int port);
 struct Reply process_command(const int sockfd, char* command);
 void process_chatmode(const char* host, const int port);
-
-
-char* integerToCString(int num){
-	int digits = 0;
-	int n = num;
-	while(n!=0){
-		n/=10;
-		digits++;
-	}
-	char* str = (char*)malloc(sizeof(char)*digits);
-	sprintf(str, "%d", num);
-}
 
 
 int main(int argc, char** argv) 
@@ -43,7 +29,6 @@ int main(int argc, char** argv)
     display_title();
     
 	while (1) {
-		//maybe need a try catch here.
 		int sockfd = connect_to(argv[1], atoi(argv[2]));
     
 		//prompts user for input and copies to command
@@ -249,7 +234,7 @@ struct Reply process_command(const int sockfd, char* command)
 		return reply_error;
 	}
 
-	char* firstCharacter;
+	char* firstCharacter = new char[1];
 	if(strcmp(action,"CREATE") == 0){
 		*firstCharacter = '0';
 	}else if(strcmp(action,"DELETE") == 0){
@@ -284,6 +269,9 @@ struct Reply process_command(const int sockfd, char* command)
 	//receive a reponse from the server
 	//convert to a Reply type and return
 	//TO DO################################################################
+	int length;
+	char* replyBuffer;
+	//length = recv(sockfd, replyBuffer, MAX_DATA, 0);
 
 	// REMOVE below code and write your own Reply.
 	struct Reply reply;
@@ -291,6 +279,9 @@ struct Reply process_command(const int sockfd, char* command)
 	reply.num_member = 5;
 	reply.port = 1024;
 	return reply;
+
+	//keep this code
+	delete firstCharacter;
 }
 
 /* 
@@ -330,8 +321,29 @@ void process_chatmode(const char* host, const int port)
     //    Don't have to worry about this situation, and you can 
     //    terminate the client program by pressing CTRL-C (SIGINT)
 	// ------------------------------------------------------------
+
+	//port comes from a response from the server!
+	int sockfd = connect_to(host, port);
+	if(sockfd < 0) exit(0);
+
+	if(fork()==0){
+		//child
+		while(1){
+			char* buf;
+			int length = recv(sockfd, buf, MAX_DATA, 0);
+			display_message(buf);
+		}
+	}else{
+		//parent
+		while(1){
+			char* message;
+			int size = MAX_DATA;
+			get_message(message, size);
+			if (send(sockfd, message, size, 0) < 0){
+				printf("error with send in client\n");
+			}
+		}
+	}
+
 }
-
-
-
 
