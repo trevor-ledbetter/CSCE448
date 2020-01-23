@@ -153,13 +153,14 @@ struct Reply process_command(const int sockfd, char* command)
 
 	//copy the firstCharacter then roomName to message
 	int roomNameLength = 0;
-	if(count==2){
+	if(count==2){ //for LIST
 		roomNameLength += strlen(roomName);
 	}
 	char message[1+roomNameLength];
-	if(count==1){ 
+
+	if(count==1){  //for LIST
 		strcpy(message, firstCharacter);
-	}else{ 
+	}else{  //for all other
 		strcpy(message, firstCharacter);
 		strcat(message, roomName);
 	}
