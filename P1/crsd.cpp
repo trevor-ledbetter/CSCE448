@@ -53,6 +53,9 @@ struct Room {
     int num_members;
     array<int, MAX_MEMBER> slave_socket;
     pid_t chatroom_process;
+
+    Room() : room_name(""), port_num(-1), num_members(0), chatroom_process(-1)
+    {}
 };
 
 // Using stl array for ease
@@ -440,8 +443,9 @@ int main (int ac, char ** av)
         exit (-1);
     }
 
-    if (0 || atoi(av[1]) >= PORT_START && atoi(av[1]) < PORT_START+MAX_ROOM) {
+    if (atoi(av[1]) >= PORT_START && atoi(av[1]) < PORT_START+MAX_ROOM) {
         printf("Starting chatroom server\n");
+        cout << "Created chatroom process" << endl;
 
         signal(SIGINT,  handle_termination_slave);
         signal(SIGTERM, handle_termination_slave);
