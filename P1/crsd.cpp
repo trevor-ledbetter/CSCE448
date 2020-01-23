@@ -53,6 +53,9 @@ struct Room {
     int num_members;
     array<int, MAX_MEMBER> slave_socket;
     pid_t chatroom_process;
+
+    Room() : room_name(""), port_num(-1), num_members(0), chatroom_process(-1)
+    {}
 };
 
 // Using stl array for ease
@@ -97,24 +100,38 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
     cout << "before roomname stuff" << endl;
     // Make room and notify client
     for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
-        if (room_db[Idx].room_name == "") {
+        // Initialize database entry
+        cout << "Current room: " << room_db[Idx].room_name << endl;
+        if (strlen(room_db[Idx].room_name) == 0) {
+            // Critical Section
+            sem_wait(shared_sem);
             cout << "1" << endl;
             strncpy(room_db[Idx].room_name, _room_name.c_str(), MAX_NAME);
             cout << "2" << endl;
-            // Initialize db entry
             room_db[Idx].num_members = 0;
             cout << "3" << endl;
             room_db[Idx].port_num = PORT_START + Idx;
             cout << "4" << endl;
             room_db[Idx].slave_socket.fill(-1);
-            cout << "5" << endl;
-            room_db[Idx].chatroom_process = -1;
+            sem_post(shared_sem);
+            // End Critical Section
 
             // Create process
-            // if (fork() == 0) { // Parent
-            reply.status = SUCCESS;
-            cout << "before reply" << endl;
-            return reply;
+            if (fork() == 0) { // Child"
+                // Critical Section
+                sem_wait(shared_sem);
+                room_db[Idx].chatroom_process = getpid();
+                sem_post(shared_sem);
+                // End Critical Section
+
+                // Start chatroom server
+                execlp("./server ", to_string(room_db[Idx].port_num).c_str(), NULL);
+            } else {    // Parent
+                reply.status = SUCCESS;
+                cout << "before reply (lobby process)" << endl;
+                return reply;   
+            }
+            break;
         }
     }
 
@@ -241,7 +258,7 @@ void lobby_connection_handler (int _client_socket){
             break;
         }
         delete msgBuf;
-        break;
+        // break;
     }
     printf("Closing client socket\n");
 	close(_client_socket);
@@ -449,8 +466,9 @@ int main (int ac, char ** av)
         exit (-1);
     }
 
-    if (0 || atoi(av[1]) >= PORT_START && atoi(av[1]) < PORT_START+MAX_ROOM) {
+    if (atoi(av[1]) >= PORT_START && atoi(av[1]) < PORT_START+MAX_ROOM) {
         printf("Starting chatroom server\n");
+        cout << "Created chatroom process" << endl;
 
         signal(SIGINT,  handle_termination_slave);
         signal(SIGTERM, handle_termination_slave);
