@@ -67,45 +67,50 @@ const off_t SHARED_MEMORY_SIZE = sizeof(sem_t) + sizeof(roomDB_t);
  * @param _client_socket    File descriptor referring to client slave socket
  * @param _room_name        Name to give new room
  * */
-void room_creation_handler (int _client_socket, string _room_name) {
+struct Reply room_creation_handler (int _client_socket, string _room_name) {
+    struct Reply reply;
+    reply.status = FAILURE_UNKNOWN;
     // Ensure room creation is valid
-    Status procStat = FAILURE_UNKNOWN;
+    cout << "before totalname" << endl;
     if (totalRooms >= MAX_ROOM) {
         perror("Too many rooms currently in use. Close some rooms to make new ones");
-        procStat = FAILURE_INVALID;
-        send(_client_socket, &procStat, sizeof(Status), 0);
-        return;
+        reply.status = FAILURE_INVALID;
+        return reply;
     }
-
+    cout << "before reinterpret cast" << endl;
     // Get reference to data
     roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
+    cout << "before already exists" << endl;
 
     for (auto It = room_db.begin(); It != room_db.end(); It++) {
         if (It->room_name == _room_name) {
             perror("Requested room name already exists.");
-            procStat = FAILURE_ALREADY_EXISTS;
-            send(_client_socket, &procStat, sizeof(Status), 0);
-            return;
+            reply.status = FAILURE_ALREADY_EXISTS;
+            return reply;
         }
     }
 
+    cout << "before roomname stuff" << endl;
     // Make room and notify client
     for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
         if (room_db[Idx].room_name == "") {
+            cout << "1" << endl;
             room_db[Idx].room_name = _room_name;
+            cout << "2" << endl;
             room_db[Idx].num_members = 0;
+            cout << "3" << endl;
             room_db[Idx].port_num = PORT_START + Idx;
+            cout << "4" << endl;
             room_db[Idx].slave_socket.fill(-1);
-            procStat = SUCCESS;
-            send(_client_socket, &procStat, sizeof(Status), 0);
-            return;
+            cout << "5" << endl;
+            reply.status = SUCCESS;
+            cout << "before reply" << endl;
+            return reply;
         }
     }
 
     perror("No empty room name found");
-    procStat = FAILURE_UNKNOWN;
-    send(_client_socket, &procStat, sizeof(Status), 0);
-    
+    return reply;    
 }
 
 /**
@@ -155,19 +160,62 @@ void lobby_connection_handler (int _client_socket){
     
     char buf [MAX_DATA];
     while (1){
-        if (recv (_client_socket, buf, sizeof (buf), 0) < 0){
+        //Recieve command from client
+        if (recv (_client_socket, buf, sizeof(buf), 0) < 0){
             perror ("server: Receive failure");    
             exit (0);
         }
-        printf("ioejr\n");
-        int num = *(int *)buf;
-        num *= 2;
-        if (num == 0)
-            break;
-        if (send(_client_socket, &num, sizeof (num), 0) == -1){
+        
+        //Parse command
+        string command_str(buf); //convert to std::string
+        cout << "Message recieved is: " << command_str << endl;
+        char firstChar = command_str[0];
+        struct Reply reply;
+        switch(firstChar){
+            case '0':
+                {
+                    //create a room
+                    string room_name(command_str.begin()+1, command_str.end());
+                    cout << "before creation" << endl;
+                    reply = room_creation_handler(_client_socket, room_name);
+                    cout << "after creation" << endl;
+                    break;
+                }
+            case '1':
+                {
+                    //delete a room
+                    break;
+                }
+            case '2':
+                {
+                    //join a room
+                    //1. check if room exists
+                    //2. check if there is an open spot
+                    //3. return a REPLY with the room
+                    break;
+                }
+            case '3':
+                {
+                    //list all the chatrooms
+                    break;
+                }
+            default:
+                break;
+        }
+
+        int size = sizeof(reply) + 1; //take away +1???
+        char* msgBuf = new char[size];
+        cout << "before memcpy" << endl;
+
+        memcpy(msgBuf, &reply, sizeof(reply));
+        cout << "after memcpy" << endl;
+
+        if (send(_client_socket, msgBuf, sizeof(msgBuf), 0) == -1){
             perror("send");
             break;
         }
+        delete msgBuf;
+        break;
     }
     printf("Closing client socket\n");
 	close(_client_socket);

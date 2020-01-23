@@ -193,14 +193,14 @@ void process_chatmode(const char* host, const int port)
 	if(sockfd < 0) exit(0);
 
 	if(fork()==0){
-		//child
+		//child takes care of recieving messages from server
 		while(1){
 			char* buf;
 			int length = recv(sockfd, buf, MAX_DATA, 0);
 			display_message(buf);
 		}
 	}else{
-		//parent
+		//parent takes message input from client, and sends to server
 		while(1){
 			char* message;
 			int size = MAX_DATA;
