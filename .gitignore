@@ -4,3 +4,5 @@
 P1/client
 
 P1/server
+
+*.o
