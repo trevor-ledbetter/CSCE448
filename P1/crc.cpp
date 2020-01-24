@@ -177,8 +177,8 @@ struct Reply process_command(const int sockfd, char* command)
 
 	
 	int length;
-	char* replyBuffer = new char[MAX_DATA];
-	length = recv(sockfd, replyBuffer, MAX_DATA, 0);
+	char* replyBuffer = new char[sizeof(Reply)];
+	length = recv(sockfd, replyBuffer, sizeof(Reply), 0);
 	struct Reply reply = *(Reply*)replyBuffer;
 
 	memset(replyBuffer, 0, sizeof(replyBuffer));
