@@ -341,11 +341,18 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
     printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);
 
     char buf [MAX_DATA];
+    memset(buf, 0, sizeof(buf));
     // Keep listening for incoming message
     while(1) {
         if (recv (_client_socket, buf, sizeof (buf), 0) < 0){
             perror ("server: Receive failure");    
             exit (0);
+        }
+
+        // Check if buffer has content, otherwise assume client disconnected and just break loop
+        if (buf[0] == '\0') {
+            printf("Exiting listen handler thread due to client DC");
+            break;
         }
 
         // Send message to other clients
