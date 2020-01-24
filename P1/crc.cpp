@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -175,6 +176,7 @@ struct Reply process_command(const int sockfd, char* command)
 
 	char* replyBuffer = new char[MAX_DATA];
 	struct Reply reply;
+	reply.status = FAILURE_INVALID;
 	switch(*firstCharacter){
 		case '0':
 			{
@@ -187,11 +189,37 @@ struct Reply process_command(const int sockfd, char* command)
 		case '1':
 			{
 				//DELETE
+				recv(sockfd, replyBuffer, MAX_DATA, 0);
+				enum Status stat = *(enum Status*)replyBuffer;
+				reply.status = stat;
 				break;
 			}
 		case '2':
 			{
 				//JOIN
+
+				recv(sockfd, replyBuffer, MAX_DATA, 0);
+				char* statusBuffer = new char[sizeof(reply.status)];
+				memcpy(statusBuffer, replyBuffer, sizeof(reply.status));
+				reply.status = *(enum Status*)statusBuffer;
+
+				char* portBuf = new char;
+				recv(sockfd, portBuf, MAX_DATA, 0);
+				cout << "portBuf is: " << portBuf << endl;
+				reply.port = atoi(portBuf);
+
+				char* num_memberBuf = new char;
+				recv(sockfd, num_memberBuf, MAX_DATA, 0);
+				cout << "num_memberBuf is: " << num_memberBuf << endl;
+				reply.num_member = atoi(num_memberBuf);
+
+
+				cout << "reply.status: " << reply.status << endl;
+				cout << "reply.port: " << reply.port << endl;
+				cout << "reply.num_member: " << reply.num_member << endl;
+				
+				delete portBuf;
+				delete num_memberBuf;
 				break;
 			}
 		case '3':
@@ -202,20 +230,28 @@ struct Reply process_command(const int sockfd, char* command)
 				enum Status stat = *(enum Status*)replyBuffer;
 				reply.status = stat;
 
-				memset(replyBuffer, 0, sizeof(replyBuffer));
-				recv(sockfd, replyBuffer, MAX_DATA, 0);
-				char* list = replyBuffer;
-				reply.list_room;
+				char* listBuffer = new char[MAX_DATA];
+				recv(sockfd, listBuffer, MAX_DATA, 0);
+				char* list = listBuffer;
+				//reply.list_room = listBuffer;
+				memcpy(reply.list_room, listBuffer, 256);
+				cout << "reply list room: " << reply.list_room << endl;
+				cout << "listBuffer: " << listBuffer << endl;
+				printf("printf %s\n", listBuffer);
+				memset(listBuffer, 0, sizeof(listBuffer));
+				delete[] listBuffer;
 				break;
 			}
 		case '4':
 			{
 				//error
+				recv(sockfd, replyBuffer, MAX_DATA, 0);
+				enum Status stat = *(enum Status*)replyBuffer;
+				reply.status = stat;
 				break;
 			}
 		default:
 			break;
-			//idk..
 	}
 
 	//struct Reply reply = *(Reply*)replyBuffer;
@@ -233,11 +269,22 @@ void process_chatmode(const char* host, const int port)
 	int sockfd = connect_to(host, port);
 	if(sockfd < 0) exit(0);
 
-	if(fork()==0){
+	__pid_t childPID = fork();
+	if(!childPID){
 		//child takes care of recieving messages from server
 		while(1){
 			char* buf;
+			memset(buf, 0, sizeof(buf));
+
 			int length = recv(sockfd, buf, MAX_DATA, 0);
+
+			if (buf[0] == '\0') {
+				string msg_s = "Chatroom closing. Exiting client...";
+				strncpy(buf, msg_s.c_str(), sizeof(buf));
+				display_message(buf);
+				exit(0);
+			}
+
 			display_message(buf);
 		}
 	}else{
@@ -248,6 +295,10 @@ void process_chatmode(const char* host, const int port)
 			get_message(message, size);
 			if (send(sockfd, message, size, 0) < 0){
 				printf("error with send in client\n");
+			}
+			if (waitpid(childPID, 0, WNOHANG) > 0) {
+				printf("Reaped child, closing parent client process");
+				exit(0);
 			}
 		}
 	}
