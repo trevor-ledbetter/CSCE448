@@ -68,7 +68,7 @@ int totalRooms = 0;
 const off_t SHARED_MEMORY_SIZE = sizeof(sem_t) + sizeof(roomDB_t);
 
 // Forward declarations
-void chatroom_send_handler(int _client_socket, string _msg);
+void chatroom_send_handler(int _client_socket, string _msg, int _msg_override_opt);
 
 
 /**
@@ -319,12 +319,18 @@ void lobby_connection_handler (int _client_socket){
  * 
  * @param _client_socket    Client slave socket file descriptor
  * */
-void chatroom_send_handler(int _client_socket, string _msg) {
+void chatroom_send_handler(int _client_socket, string _msg, int _msg_override_opt = 0) {
     printf("Connected to Chatroom:Send on slave socket: %d", _client_socket);
 
     // Add message to buffer
     char buf [MAX_DATA];
-    strncpy(buf, _msg.c_str(), MAX_DATA);
+    memset(buf, 0, sizeof(buf));
+
+    if (_msg_override_opt == 0) {
+        strncpy(buf, _msg.c_str(), MAX_DATA);
+    } else if (_msg_override_opt == 1) {
+        memset(buf, '\0', 1);
+    }
 
     // Send to client
     if (send(_client_socket, buf, sizeof(buf), 0) < 0) {
@@ -359,7 +365,7 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
         // Send message to other clients
         for (int currSocket : _room_ptr->slave_socket) {
             if (currSocket != -1) {
-                thread sendThread(chatroom_send_handler, currSocket, string(buf));
+                thread sendThread(chatroom_send_handler, currSocket, string(buf), 0);
                 sendThread.detach();
             }
         }
