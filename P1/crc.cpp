@@ -9,6 +9,7 @@
 #include <string.h>
 #include "interface.h"
 #include <iostream>
+#include <math.h>
 using namespace std;
 
 /*
@@ -169,14 +170,58 @@ struct Reply process_command(const int sockfd, char* command)
 		return reply_error;
 	}
 
-	
-	int length;
-	char* replyBuffer = new char[MAX_DATA];
-	length = recv(sockfd, replyBuffer, MAX_DATA, 0);
-	struct Reply reply = *(Reply*)replyBuffer;
+	//int length;
+	//length = recv(sockfd, replyBuffer, MAX_DATA, 0);
 
+	char* replyBuffer = new char[MAX_DATA];
+	struct Reply reply;
+	switch(*firstCharacter){
+		case '0':
+			{
+				//CREATE
+				recv(sockfd, replyBuffer, MAX_DATA, 0);
+				enum Status stat = *(enum Status*)replyBuffer;
+				reply.status = stat;
+				break;
+			}
+		case '1':
+			{
+				//DELETE
+				break;
+			}
+		case '2':
+			{
+				//JOIN
+				break;
+			}
+		case '3':
+			{
+				//LIST
+				enum Status s = FAILURE_INVALID;
+				recv(sockfd, replyBuffer, sizeof(s), 0);
+				enum Status stat = *(enum Status*)replyBuffer;
+				reply.status = stat;
+
+				memset(replyBuffer, 0, sizeof(replyBuffer));
+				recv(sockfd, replyBuffer, MAX_DATA, 0);
+				char* list = replyBuffer;
+				reply.list_room;
+				break;
+			}
+		case '4':
+			{
+				//error
+				break;
+			}
+		default:
+			break;
+			//idk..
+	}
+
+	//struct Reply reply = *(Reply*)replyBuffer;
 	memset(replyBuffer, 0, sizeof(replyBuffer));
 	delete[] replyBuffer;
+
 	delete firstCharacter;
 	return reply; 
 }
