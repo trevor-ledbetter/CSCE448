@@ -328,8 +328,8 @@ void lobby_connection_handler (int _client_socket){
                     char* msgBuf = new char[size];
                     memcpy(msgBuf, &reply, sizeof(Reply));
                     
-                    cout << "DEB::msgBuf: " << msgBuf << endl;
-                    cout << "DEB::portfrombuf: " << ((Reply*)msgBuf)->port << endl;
+                    // cout << "DEB::msgBuf: " << msgBuf << endl;
+                    // cout << "DEB::portfrombuf: " << ((Reply*)msgBuf)->port << endl;
                     send(_client_socket, msgBuf, sizeof(Reply), 0);
                     delete msgBuf;*/
 
