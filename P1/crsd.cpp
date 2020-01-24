@@ -72,10 +72,9 @@ void chatroom_send_handler(int _client_socket, string _msg);
 /**
  * Handles client requests to open a new room and sends appropriate response to requesting client
  * 
- * @param _client_socket    File descriptor referring to client slave socket
  * @param _room_name        Name to give new room
  * */
-struct Reply room_creation_handler (int _client_socket, string _room_name) {
+struct Reply room_creation_handler (string _room_name) {
     struct Reply reply;
     reply.status = FAILURE_UNKNOWN;
     // Ensure room creation is valid
@@ -135,10 +134,9 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
 /**
  * Handles chatroom deletion and sends appropriate response to requesting client and all other connected clients
  * 
- * @param _client_socket    File descriptor referring to client slave socket
  * @param _room_name        Name of room to delete
  * */
-struct Reply room_deletion_handler_master(int _client_socket, string _room_name) {
+struct Reply room_deletion_handler_master(string _room_name) {
     struct Reply reply;
     reply.status = SUCCESS;
     // Get reference to data
@@ -255,7 +253,7 @@ void lobby_connection_handler (int _client_socket){
             case '0':
                 {
                     //create a room
-                    reply = room_creation_handler(_client_socket, room_name);
+                    reply = room_creation_handler(room_name);
                     int size = sizeof(reply) + 1;
                     char* msgBuf = new char[size];
                     memcpy(msgBuf, &reply, sizeof(reply));
@@ -267,7 +265,7 @@ void lobby_connection_handler (int _client_socket){
             case '1':
                 {
                     //delete a room
-                    reply = room_deletion_handler_master(_client_socket, room_name);
+                    reply = room_deletion_handler_master(room_name);
                     
                     //send reply to all in the room
                     int size = sizeof(reply) + 1;
