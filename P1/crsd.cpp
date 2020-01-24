@@ -197,18 +197,16 @@ struct Reply room_list_handler() {
     cout << "list_room strlen: " << strlen(list_room) << endl;
     cout << "list_room size: " << sizeof(list_room) << endl;
 
-    char* comma;
-    *comma = ',';
+    char comma[1] = {','};
+    //memset(comma, ',', 1); //reset action so firstCharacter will = 4, which is the error value
+    memset(list_room, 0, sizeof(list_room));
     for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
-        cout << "in for" << endl;
-        cout << "Current room: " << room_db[Idx].room_name << endl;
         if (strlen(room_db[Idx].room_name) != 0) {
             cout << "inside if!\n";
-            strcat(list_room, room_db[Idx].room_name);
-            strcat(list_room, comma);
+            strncat(list_room, room_db[Idx].room_name, strlen(room_db[Idx].room_name));
+            strncat(list_room, comma, 1);
         }
-    }
-    cout << "after for" << endl;
+    };
 
     if(strlen(list_room) > 0){ //make sure that something was actually copied to list_room
         list_room[strlen(list_room)-1] = 0; //remove last comma
@@ -216,6 +214,10 @@ struct Reply room_list_handler() {
     reply.status = SUCCESS; //im not sure how this can fail?
     //reply.list_room = list_room;
     strcpy(reply.list_room, list_room);
+    cout << "reply.list_room is: " << reply.list_room << endl;
+    cout << "list_room is: " << list_room << endl;
+    cout << "size of reply.list_room is: " << sizeof(reply.list_room) << endl;
+
     return reply;
 }
 
@@ -281,6 +283,15 @@ void lobby_connection_handler (int _client_socket){
             {
                 //list all the chatrooms
                 reply = room_list_handler();
+                cout << "case reply.list_room is: " << reply.list_room << endl;
+                cout << "case size of reply.list_room is: " << sizeof(reply.list_room) << endl;
+
+                int size = sizeof(reply) + 1;
+                char* msgBuf = new char[size];
+                memcpy(msgBuf, &reply, sizeof(reply));
+
+                send(_client_socket, msgBuf, sizeof(msgBuf), 0);
+                delete msgBuf;
                 break;
             }
         case '4':
@@ -295,7 +306,6 @@ void lobby_connection_handler (int _client_socket){
                 break;
             }
         default:
-            cout << "default action" << endl;
             break;
     }
     memset(buf, 0, sizeof(buf));
