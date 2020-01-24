@@ -65,11 +65,21 @@ int main(int argc, char** argv)
 		display_reply(command, reply);
 		
 		touppercase(command, strlen(command) - 1);
+		//if (strncmp(command, "JOIN", 4) == 0 && reply.status == SUCCESS) {
+		/*if (strncmp(command, "JOIN", 4) == 0) {
+			switch (reply.status) {
+				case SUCCESS:
+					printf("Now you are in the chatmode\n");
+					process_chatmode(argv[1], reply.port);
+					break;
+				default:
+					break;
+			}
+		}*/
 		if (strncmp(command, "JOIN", 4) == 0) {
 			printf("Now you are in the chatmode\n");
 			process_chatmode(argv[1], reply.port);
 		}
-	
 		close(sockfd);
     }
 
@@ -158,13 +168,13 @@ struct Reply process_command(const int sockfd, char* command)
 	}
 
 	char* firstCharacter = new char[1];
-	if(strcmp(action,"CREATE") == 0){
+	if(strcmp(action,"CREATE") == 0 || strcmp(action,"create") == 0){
 		*firstCharacter = '0';
-	}else if(strcmp(action,"DELETE") == 0){
+	}else if(strcmp(action,"DELETE") == 0 || strcmp(action,"delete") == 0){
 		*firstCharacter = '1';
-	}else if(strcmp(action,"JOIN") == 0){
+	}else if(strcmp(action,"JOIN") == 0 || strcmp(action,"join") == 0){
 		*firstCharacter = '2';
-	}else if(strcmp(action,"LIST") == 0){
+	}else if(strcmp(action,"LIST") == 0 || strcmp(action,"list") == 0){
 		*firstCharacter = '3';
 	}else{
 		*firstCharacter = '4';
@@ -241,8 +251,12 @@ struct Reply process_command(const int sockfd, char* command)
 				cout << "reply.port: " << reply.port << endl;
 				cout << "reply.num_member: " << reply.num_member << endl;
 				
-				delete portBuf;
-				delete num_memberBuf;
+
+				memset(portBuf, 0, sizeof(portBuf));
+				memset(num_memberBuf, 0, sizeof(num_memberBuf));
+
+				delete[] portBuf;
+				delete[] num_memberBuf;
 				break;
 			}
 		case '3':

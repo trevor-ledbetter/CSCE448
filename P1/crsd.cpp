@@ -122,6 +122,7 @@ struct Reply room_creation_handler (string _room_name) {
 
                 // Start chatroom server
                 execlp("./server", "./server", to_string(room_db[Idx].port_num).c_str(), NULL);
+                cout << "making room with port: " << room_db[Idx].port_num << endl;
                 exit(0);
             } else {    // Parent
                 reply.status = SUCCESS;
@@ -235,11 +236,8 @@ struct Reply room_list_handler() {
 
     //iterate through all rooms, and copy occupied room names to list
     char list_room[MAX_DATA];
-    //cout << "list_room strlen: " << strlen(list_room) << endl;
-    //cout << "list_room size: " << sizeof(list_room) << endl;
 
     char comma[1] = {','};
-    //memset(comma, ',', 1); //reset action so firstCharacter will = 4, which is the error value
     memset(list_room, 0, sizeof(list_room));
     for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
         if (strlen(room_db[Idx].room_name) != 0) {
@@ -253,83 +251,11 @@ struct Reply room_list_handler() {
         list_room[strlen(list_room)-1] = 0; //remove last comma
     }
     reply.status = SUCCESS; //im not sure how this can fail?
-    //reply.list_room = list_room;
     strcpy(reply.list_room, list_room);
-    //cout << "reply.list_room is: " << reply.list_room << endl;
-    //cout << "list_room is: " << list_room << endl;
-    //cout << "size of reply.list_room is: " << sizeof(reply.list_room) << endl;
 
     return reply;
 }
 
-void send_Reply(int _client_socket, struct Reply reply){
-    //first transform reply into a char* msgBuf
-    int size = sizeof(reply) + 1; //+1???
-    char* msgBuf = new char[size];
-    memcpy(msgBuf, &reply, sizeof(reply));
-
-    char size_of_reply_char[MAX_DATA];
-    sprintf(size_of_reply_char, "%d", size);
-    cout << "size_of_reply_char: " << size_of_reply_char << endl;
-    cout << "size: " << size << endl;
-    cout << "SEND_REPLY list_room: " << reply.list_room << endl;
-    send(_client_socket, size_of_reply_char, sizeof(size_of_reply_char), 0);
-
-    int numWholeMessages = floor(size/256);
-    int sizeOfPartial = size - (numWholeMessages*256);
-    cout << "numWholeMessages: " << numWholeMessages << endl;
-    cout << "sizeOfPartial: " << sizeOfPartial << endl;
-
-    int offset = -256;
-    char* replyBuf = new char[size];
-    for(int i=0; i<numWholeMessages+1; i++){
-        if(i==numWholeMessages && sizeOfPartial>0){ //any leftover data
-            //offset or size of partial???
-
-            offset += 256;
-            char* smallBuf = new char[sizeOfPartial];
-            strncat(smallBuf, msgBuf+offset, sizeOfPartial);
-            send(_client_socket, smallBuf, sizeOfPartial, 0);
-            //memcpy(replyBuf, smallBuf+offset, sizeOfPartial);
-            strncat(replyBuf, msgBuf+offset, sizeOfPartial);
-            cout << "##################: " << msgBuf+offset << endl;
-
-            memset(smallBuf, 0, sizeof(smallBuf));
-            delete[] smallBuf;
-        }else if(i!=numWholeMessages){ //whole messages
-            offset += 256;
-            char* smallBuf = new char[256];
-            strncat(smallBuf, msgBuf+offset, 256);
-            send(_client_socket, smallBuf, 256, 0);
-            //memcpy(replyBuf, smallBuf+offset, 256);
-            strncat(replyBuf, msgBuf+offset, 256);
-
-
-            memset(smallBuf, 0, sizeof(smallBuf));
-            delete[] smallBuf;
-        }
-    }
-
-    
-
-
-    struct Reply reply2 = *(Reply*)replyBuf;
-    cout << "SEND_REPLY list of room2: " << reply2.list_room << endl;
-    struct Reply reply3 = *(Reply*)msgBuf;
-    cout << "SEND_REPLY list of room3: " << reply3.list_room << endl;
-    
-    char* r4 = new char[size];
-    strncat(r4, msgBuf, 256);
-    strncat(r4, msgBuf+256, 5);
-    struct Reply reply4 = *(Reply*)r4;
-    //cout << "SEND_REPLY list of room4: " << reply4.list_room << endl;
-    printf("SEND_REPLY list of room4: %s\n", reply4.list_room);
-
-
-
-    delete msgBuf;
-    return;
-}
 
 /**
  * Main connection handling function that delegates operations to other functions based on command from message received
@@ -419,6 +345,7 @@ void lobby_connection_handler (int _client_socket){
 
                     char* portBuf = new char;
                     sprintf(portBuf, "%d", reply.port);
+                    cout << "SENDING PORT: " << portBuf << endl;
                     send(_client_socket, portBuf, sizeof(portBuf), 0);
 
                     char* num_memberBuf = new char;
@@ -427,9 +354,12 @@ void lobby_connection_handler (int _client_socket){
                     send(_client_socket, num_memberBuf, sizeof(num_memberBuf), 0);
 
                     
-                    delete portBuf;
-                    delete num_memberBuf;
-                    delete statusBuf;
+                    memset(portBuf, 0, sizeof(portBuf));
+				    memset(num_memberBuf, 0, sizeof(num_memberBuf));
+                    memset(statusBuf, 0, sizeof(statusBuf));
+                    delete[] portBuf;
+                    delete[] num_memberBuf;
+                    delete[] statusBuf;
                     break;
                 }
             case '3':
@@ -481,7 +411,6 @@ void lobby_connection_handler (int _client_socket){
                 break;
         }
     }
-    //memset(buf, 0, sizeof(buf));    //memset(buf, 0, sizeof(buf));
 
     printf("Closing client socket\n");
 	    close(_client_socket);
