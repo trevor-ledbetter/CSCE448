@@ -484,7 +484,7 @@ void lobby_connection_handler (int _client_socket){
     //memset(buf, 0, sizeof(buf));    //memset(buf, 0, sizeof(buf));
 
     printf("Closing client socket\n");
-	    close(_client_socket);list_roomlist_room
+	    close(_client_socket);
 }
 
 
@@ -507,8 +507,7 @@ void chatroom_send_handler(int _client_socket, string _msg, int _msg_override_op
     }
 
     // Send to client
-    if (send(_client_socket, buf, sizeof(buf), 0) < 0) {    // Send to client
-
+    if (send(_client_socket, buf, sizeof(buf), 0) < 0) {
         fprintf(stderr, "server: Send Failure to Socket %d", _client_socket);
     }
 }
@@ -525,8 +524,7 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
     sem_wait(shared_sem);
     _room_ptr->num_members += 1;
     for (int &currSock : _room_ptr->slave_socket) {
-        if (cur        if (currSocurrSockck == -1) {
-rSock == -1) {
+        if (currSock == -1) {
             currSock = _client_socket;
             break;
         }
@@ -534,21 +532,14 @@ rSock == -1) {
     sem_post(shared_sem);
     // End critical region
 
-
-
-
-
-    printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);    printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);
-
     printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);
 
     char buf [MAX_DATA];
     memset(buf, 0, sizeof(buf));
-    //while Keep listening for incoming message
+    // Keep listening for incoming message
     while(1) {
         if (recv (_client_socket, buf, sizeof (buf), 0) < 0){
-     perror ("server: Receive failure");
-     perror ("server: Receive failure");
+            perror ("server: Receive failure");
             // Critical Region
             sem_wait(shared_sem);
             _room_ptr->num_members -= 1;
@@ -561,10 +552,7 @@ rSock == -1) {
             sem_post(shared_sem);
             // End Critical Region
             exit (0);
-        }        }            exit (0);
-        }        }            exit (0);
-
-
+        }
 
         // Check if buffer has content, otherwise assume client disconnected and just break loop
         if (buf[0] == 3) {
