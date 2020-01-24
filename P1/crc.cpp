@@ -4,6 +4,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <sys/select.h>
+#include <signal.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +21,23 @@ int connect_to(const char *host, const int port);
 struct Reply process_command(const int sockfd, char* command);
 void process_chatmode(const char* host, const int port);
 
+int mainsocket = -1;
+
+void handle_termination(int _sig) {
+    if (_sig == SIGINT) {
+        printf("Client shutting down (Keyboard interrupt)\n");
+    } else if (_sig == SIGTERM) {
+        printf("Client shutting down (Termination signal)\n");
+    }
+		char buf[MAX_DATA];
+		buf[0] = 3;
+		if (send(mainsocket, buf, MAX_DATA, 0) < 0){
+				printf("error with send in client\n");
+		}
+		close(mainsocket);
+    printf("Handling signal\n");
+    exit(0);
+}
 
 int main(int argc, char** argv) 
 {
@@ -27,6 +46,10 @@ int main(int argc, char** argv)
 				"usage: enter host address and port number\n");
 		exit(1);
 	}
+
+	signal(SIGINT,  handle_termination);
+	signal(SIGTERM, handle_termination);
+	signal(SIGABRT, handle_termination);
 
     display_title();
     
