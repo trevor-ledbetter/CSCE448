@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -235,72 +236,81 @@ void lobby_connection_handler (int _client_socket){
     //error if invalid input is typed the client will try and reconnect    
     //########################################################################################################################################
 
-    //Parse command
-    string command_str(buf); //convert to std::string
-    string room_name(command_str.begin()+1, command_str.end());
-    cout << "Message received is: " << command_str << endl;
-    char firstChar = command_str[0];
-    struct Reply reply;
-    switch(firstChar){
-        case '0':
-            {
-                //create a room
-                reply = room_creation_handler(_client_socket, room_name);
-                int size = sizeof(reply) + 1;
-                char* msgBuf = new char[size];
-                memcpy(msgBuf, &reply, sizeof(reply));
-
-                send(_client_socket, msgBuf, sizeof(msgBuf), 0);
-                delete msgBuf;
-                break;
-            }
-        case '1':
-            {
-                //delete a room
-                reply = room_deletion_handler_master(_client_socket, room_name);
-                
-                //send reply to all in the room
-                int size = sizeof(reply) + 1;
-                char* msgBuf = new char[size];
-                memcpy(msgBuf, &reply, sizeof(reply));
-
-                //for(){
-                    send(_client_socket, msgBuf, sizeof(msgBuf), 0);
-                //}
-                delete msgBuf;
-                break;
-            }
-        case '2':
-            {
-                //join a room
-                //1. check if room exists
-                //2. check if there is an open spot
-                //3. return a REPLY with the room
-                break;
-            }
-        case '3':
-            {
-                //list all the chatrooms
-
-                break;
-            }
-        case '4':
-            {   
-                cout << "CASE 4 yo!\n";
-                reply.status = FAILURE_INVALID;
-                int size = sizeof(reply) + 1;
-                char* msgBuf = new char[size];
-                memcpy(msgBuf, &reply, sizeof(reply));
-
-                send(_client_socket, msgBuf, sizeof(msgBuf), 0);
-                delete msgBuf;
-                break;
-            }
-        default:
-            cout << "default action" << endl;
-            break;
+    // Check if buffer has content, otherwise assume client disconnected and just finish thread
+    bool bufHasContent = false;
+    if (buf[0] != '\0') {
+        bufHasContent = true;
     }
+
+    //Parse command
+    
+    if (bufHasContent) {
+        string command_str(buf); //convert to std::string
+        string room_name(command_str.begin()+1, command_str.end());
+        cout << "Message received is: " << command_str << endl;
+        char firstChar = command_str[0];
+        struct Reply reply;
+        switch(firstChar){
+            case '0':
+                {
+                    //create a room
+                    reply = room_creation_handler(_client_socket, room_name);
+                    int size = sizeof(reply) + 1;
+                    char* msgBuf = new char[size];
+                    memcpy(msgBuf, &reply, sizeof(reply));
+
+                    send(_client_socket, msgBuf, sizeof(msgBuf), 0);
+                    delete msgBuf;
+                    break;
+                }
+            case '1':
+                {
+                    //delete a room
+                    reply = room_deletion_handler_master(_client_socket, room_name);
+                    
+                    //send reply to all in the room
+                    int size = sizeof(reply) + 1;
+                    char* msgBuf = new char[size];
+                    memcpy(msgBuf, &reply, sizeof(reply));
+
+                    //for(){
+                        send(_client_socket, msgBuf, sizeof(msgBuf), 0);
+                    //}
+                    delete msgBuf;
+                    break;
+                }
+            case '2':
+                {
+                    //join a room
+                    //1. check if room exists
+                    //2. check if there is an open spot
+                    //3. return a REPLY with the room
+                    break;
+                }
+            case '3':
+                {
+                    //list all the chatrooms
+
+                    break;
+                }
+            case '4':
+                {   
+                    cout << "CASE 4 yo!\n";
+                    reply.status = FAILURE_INVALID;
+                    int size = sizeof(reply) + 1;
+                    char* msgBuf = new char[size];
+                    memcpy(msgBuf, &reply, sizeof(reply));
+
+                    send(_client_socket, msgBuf, sizeof(msgBuf), 0);
+                    delete msgBuf;
+                    break;
+                }
+            default:
+                cout << "default action" << endl;
+                break;
+        }
     memset(buf, 0, sizeof(buf));
+    }
     printf("Closing client socket\n");
 	close(_client_socket);
 }
@@ -482,6 +492,17 @@ void handle_termination_master(int _sig) {
         printf("Server shutting down (Termination signal)\n");
     }
     printf("Handling signal from master\n");
+
+    // Kill all chatroom processes
+    roomDB_t* db_ptr = reinterpret_cast<roomDB_t*>(shared_data);
+    for (auto currRoom : *db_ptr) {
+        if (currRoom.chatroom_process != -1) {
+            printf("Killing and waiting on process %d\n", currRoom.chatroom_process);
+            kill(currRoom.chatroom_process, SIGTERM);
+            waitpid(currRoom.chatroom_process, NULL, 0);
+        }
+    }
+
     munmap(shared_start, SHARED_MEMORY_SIZE);
     shm_unlink(SHARED_MEMORY_NAME);
     sem_destroy(shared_sem);    // Only destroy semaphore from master
@@ -520,7 +541,7 @@ int main (int ac, char ** av)
         close(shmFD);
         shared_data = shared_start + sizeof(sem_t);
         shared_sem = (sem_t*)shared_start;
-        printf("Starting Chatroom Process: %d\n", reinterpret_cast<roomDB_t*>(shared_data)->at(0).num_members);
+        printf("Starting a Chatroom Process\n");
 
         roomDB_t* db_ptr = reinterpret_cast<roomDB_t*>(shared_data);
         Room* process_chatroom = nullptr;
