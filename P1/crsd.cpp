@@ -199,6 +199,7 @@ struct Reply room_list_handler() {
     char* comma;
     *comma = ',';
     for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
+        cout << "in for" << endl;
         cout << "Current room: " << room_db[Idx].room_name << endl;
         if (strlen(room_db[Idx].room_name) != 0) {
             cout << "inside if!\n";
@@ -206,6 +207,7 @@ struct Reply room_list_handler() {
             strcat(list_room, comma);
         }
     }
+    cout << "after for" << endl;
 
     if(strlen(list_room) > 0){ //make sure that something was actually copied to list_room
         list_room[strlen(list_room)-1] = 0; //remove last comma
@@ -230,9 +232,6 @@ void lobby_connection_handler (int _client_socket){
         perror ("server: Receive failure");    
         exit (0);
     }
-    //########################################################################################################################################
-    //error if invalid input is typed the client will try and reconnect    
-    //########################################################################################################################################
 
     //Parse command
     string command_str(buf); //convert to std::string
@@ -280,12 +279,11 @@ void lobby_connection_handler (int _client_socket){
         case '3':
             {
                 //list all the chatrooms
-
+                reply = room_list_handler();
                 break;
             }
         case '4':
             {   
-                cout << "CASE 4 yo!\n";
                 reply.status = FAILURE_INVALID;
                 int size = sizeof(reply) + 1;
                 char* msgBuf = new char[size];

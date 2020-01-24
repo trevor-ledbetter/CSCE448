@@ -142,11 +142,6 @@ struct Reply process_command(const int sockfd, char* command)
 	}else if(strcmp(action,"LIST") == 0){
 		*firstCharacter = '3';
 	}else{
-		/*printf("Invalid input\n");
-		struct Reply reply_error;
-		reply_error.status = FAILURE_INVALID;
-		delete firstCharacter;
-		return reply_error;*/
 		*firstCharacter = '4';
 	}
 
