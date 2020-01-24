@@ -55,8 +55,10 @@ struct Room {
     array<int, MAX_MEMBER> slave_socket;
     pid_t chatroom_process;
 
-    Room() : room_name(""), port_num(-1), num_members(0), chatroom_process(-1)
-    {}
+    Room() : port_num(-1), num_members(0), chatroom_process(-1)
+    {
+        strncpy(room_name, "\0", MAX_NAME);
+    }
 };
 
 // Using stl array for ease
@@ -158,10 +160,9 @@ struct Reply room_deletion_handler_master(string _room_name) {
 
     // Send exit messages on separate threads
     vector<thread> senderThreads;
-    string exitMsg = "Chat room being deleted!";
     for (auto It = roomPending->slave_socket.begin(); It != roomPending->slave_socket.end(); It++) {
         if (*It != -1) {
-            thread sendThread(chatroom_send_handler, *It, exitMsg);
+            thread sendThread(chatroom_send_handler, *It, "0", 1);
             senderThreads.push_back(std::move(sendThread));
         }
     }
