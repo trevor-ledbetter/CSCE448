@@ -192,19 +192,66 @@ void process_chatmode(const char* host, const int port)
 {
 	//port comes from a response from the server!
 	int sockfd = connect_to(host, port);
+	mainsocket = sockfd;
 	if(sockfd < 0) exit(0);
 
+	while(1) {
+		// Setup select() params
+		fd_set 	readFDSet;
+		fd_set  writeFDSet;
+		timeval readTime;
+		int			selectOut;
+
+		FD_ZERO(&readFDSet);
+		FD_ZERO(&writeFDSet);
+		FD_SET(sockfd, &readFDSet);
+		FD_SET(sockfd, &writeFDSet);
+		FD_SET(0, &readFDSet);
+
+		readTime.tv_sec = 1;
+		readTime.tv_usec = 0;
+
+		selectOut = select(sockfd+1, &readFDSet, &writeFDSet, NULL, &readTime);
+
+		if (selectOut < 0) {
+			perror("Error with select");
+			exit(1);
+		} else if (selectOut > 0) {
+			char buf[MAX_DATA];
+			memset(buf, 0, MAX_DATA);
+			// Handle STDIN
+			if (FD_ISSET(0, &readFDSet)) {
+				get_message(buf, MAX_DATA);
+				if (send(sockfd, buf, MAX_DATA, 0) < 0){
+					printf("error with send in client\n");
+				}
+			} else if (FD_ISSET(sockfd, &readFDSet)) {
+				int length = recv(sockfd, buf, MAX_DATA, 0);
+				if (buf[0] == 3 || length == 0) {
+					string msg_s = "Chatroom closing. Closing client...\n";
+					strncpy(buf, msg_s.c_str(), sizeof(buf));
+					display_message(buf);
+					exit(0);
+				}
+
+				display_message(buf);
+				printf("\n");
+			}
+		}
+	}
+
+	#if 0
 	__pid_t childPID = fork();
 	if(!childPID){
 		//child takes care of recieving messages from server
 		while(1){
-			char* buf;
+			char buf[MAX_DATA];
 			memset(buf, 0, sizeof(buf));
 
 			int length = recv(sockfd, buf, MAX_DATA, 0);
 
-			if (buf[0] == '\0') {
-				string msg_s = "Chatroom closing. Exiting client...";
+			if (buf[0] == 3) {
+				string msg_s = "Chatroom closing. Press enter to continue...\n";
 				strncpy(buf, msg_s.c_str(), sizeof(buf));
 				display_message(buf);
 				exit(0);
@@ -215,17 +262,18 @@ void process_chatmode(const char* host, const int port)
 	}else{
 		//parent takes message input from client, and sends to server
 		while(1){
-			char* message;
+			char message[MAX_DATA];
 			int size = MAX_DATA;
 			get_message(message, size);
 			if (send(sockfd, message, size, 0) < 0){
 				printf("error with send in client\n");
 			}
 			if (waitpid(childPID, 0, WNOHANG) > 0) {
-				printf("Reaped child, closing parent client process");
+				printf("Reaped child, closing parent client process\n");
 				exit(0);
 			}
 		}
 	}
+	#endif
 }
 
