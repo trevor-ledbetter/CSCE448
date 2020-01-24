@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/wait.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -193,11 +194,22 @@ void process_chatmode(const char* host, const int port)
 	int sockfd = connect_to(host, port);
 	if(sockfd < 0) exit(0);
 
-	if(fork()==0){
+	__pid_t childPID = fork();
+	if(!childPID){
 		//child takes care of recieving messages from server
 		while(1){
 			char* buf;
+			memset(buf, 0, sizeof(buf));
+
 			int length = recv(sockfd, buf, MAX_DATA, 0);
+
+			if (buf[0] == '\0') {
+				string msg_s = "Chatroom closing. Exiting client...";
+				strncpy(buf, msg_s.c_str(), sizeof(buf));
+				display_message(buf);
+				exit(0);
+			}
+
 			display_message(buf);
 		}
 	}else{
@@ -208,6 +220,10 @@ void process_chatmode(const char* host, const int port)
 			get_message(message, size);
 			if (send(sockfd, message, size, 0) < 0){
 				printf("error with send in client\n");
+			}
+			if (waitpid(childPID, 0, WNOHANG) > 0) {
+				printf("Reaped child, closing parent client process");
+				exit(0);
 			}
 		}
 	}
