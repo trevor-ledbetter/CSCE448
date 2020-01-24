@@ -109,7 +109,7 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
             // End Critical Section
 
             // Create process
-            if (fork() == 0) { // Child"
+            if (fork() == 0) { // Child
                 // Critical Section
                 sem_wait(shared_sem);
                 room_db[Idx].chatroom_process = getpid();
@@ -117,7 +117,8 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
                 // End Critical Section
 
                 // Start chatroom server
-                execlp("./server ", to_string(room_db[Idx].port_num).c_str(), NULL);
+                // execlp("./server ", to_string(room_db[Idx].port_num).c_str(), NULL);
+                exit(0);
             } else {    // Parent
                 reply.status = SUCCESS;
                 return reply;   
