@@ -85,6 +85,7 @@ struct Reply room_creation_handler (string _room_name) {
         reply.status = FAILURE_INVALID;
         return reply;
     }
+    
     // Get reference to data
     roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
 
@@ -141,6 +142,7 @@ struct Reply room_creation_handler (string _room_name) {
 struct Reply room_deletion_handler_master(string _room_name) {
     struct Reply reply;
     reply.status = SUCCESS;
+
     // Get reference to data
     roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
     
@@ -171,10 +173,13 @@ struct Reply room_deletion_handler_master(string _room_name) {
     for (auto &trd : senderThreads) {
         trd.join();
     }
-    // End room process
-    kill(roomPending->chatroom_process, SIGTERM);
+    
     // Critical Section
     sem_wait(shared_sem);
+    
+    // End room process
+    kill(roomPending->chatroom_process, SIGTERM);
+
     roomPending->chatroom_process = -1;
     roomPending->num_members = 0;
     roomPending->port_num = -1;
@@ -352,7 +357,18 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
     // Keep listening for incoming message
     while(1) {
         if (recv (_client_socket, buf, sizeof (buf), 0) < 0){
-            perror ("server: Receive failure");    
+            perror ("server: Receive failure");
+            // Critical Region
+            sem_wait(shared_sem);
+            _room_ptr->num_members -= 1;
+            for (int &currSock : _room_ptr->slave_socket) {
+                if (currSock == _client_socket) {
+                    currSock = -1;
+                    break;
+                }
+            }
+            sem_post(shared_sem);
+            // End Critical Region
             exit (0);
         }
 
@@ -480,7 +496,7 @@ void chatroom_server(char* port, Room* _room_ptr) {
         exit(1);
     }
 	int serverID = atoi(port) - PORT_START;
-    printf("Chat Server[%d]-%s: waiting for connections...\n", serverID, _room_ptr->room_name);
+    printf("Chat Server[%d]-%s: waiting for connections on port %s...\n", serverID, _room_ptr->room_name, port);
 	while(1) 
 	{  // main accept() loop
         sin_size = sizeof their_addr;
@@ -545,8 +561,6 @@ int main (int ac, char ** av)
     }
 
     if (atoi(av[1]) >= PORT_START && atoi(av[1]) < PORT_START+MAX_ROOM) {
-        printf("Starting chatroom server\n");
-        cout << "Created chatroom process" << endl;
 
         signal(SIGINT,  handle_termination_slave);
         signal(SIGTERM, handle_termination_slave);
