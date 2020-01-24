@@ -129,10 +129,7 @@ struct Reply process_command(const int sockfd, char* command)
 	//int that will be sent as the first char to the server
 	if(count < 1 || count > 2)
 	{
-		printf("error with number of arguments in client\n");
-		struct Reply reply_error;
-		reply_error.status = FAILURE_INVALID;
-		return reply_error;
+		memset(action, 0, sizeof(action)); //reset action so firstCharacter will = 4, which is the error value
 	}
 
 	char* firstCharacter = new char[1];
@@ -145,10 +142,12 @@ struct Reply process_command(const int sockfd, char* command)
 	}else if(strcmp(action,"LIST") == 0){
 		*firstCharacter = '3';
 	}else{
-		printf("error with action in client\n");
+		/*printf("Invalid input\n");
 		struct Reply reply_error;
 		reply_error.status = FAILURE_INVALID;
-		return reply_error;
+		delete firstCharacter;
+		return reply_error;*/
+		*firstCharacter = '4';
 	}
 
 	//copy the firstCharacter then roomName to message

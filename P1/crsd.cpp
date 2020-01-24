@@ -186,6 +186,37 @@ struct Reply room_deletion_handler_master(int _client_socket, string _room_name)
     return reply;
 }
 
+struct Reply room_list_handler() {
+    struct Reply reply;
+
+    // Get reference to data
+    roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
+
+    //iterate through all rooms, and copy occupied room names to list
+    char list_room[MAX_DATA];
+    cout << "list_room strlen: " << strlen(list_room) << endl;
+    cout << "list_room size: " << sizeof(list_room) << endl;
+
+    char* comma;
+    *comma = ',';
+    for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
+        cout << "Current room: " << room_db[Idx].room_name << endl;
+        if (strlen(room_db[Idx].room_name) != 0) {
+            cout << "inside if!\n";
+            strcat(list_room, room_db[Idx].room_name);
+            strcat(list_room, comma);
+        }
+    }
+
+    if(strlen(list_room) > 0){ //make sure that something was actually copied to list_room
+        list_room[strlen(list_room)-1] = 0; //remove last comma
+    }
+    reply.status = SUCCESS; //im not sure how this can fail?
+    //reply.list_room = list_room;
+    strcpy(reply.list_room, list_room);
+    return reply;
+}
+
 /**
  * Main connection handling function that delegates operations to other functions based on command from message received
  * 
@@ -200,7 +231,10 @@ void lobby_connection_handler (int _client_socket){
         perror ("server: Receive failure");    
         exit (0);
     }
-    
+    //########################################################################################################################################
+    //error if invalid input is typed the client will try and reconnect    
+    //########################################################################################################################################
+
     //Parse command
     string command_str(buf); //convert to std::string
     string room_name(command_str.begin()+1, command_str.end());
@@ -233,6 +267,7 @@ void lobby_connection_handler (int _client_socket){
                 //for(){
                     send(_client_socket, msgBuf, sizeof(msgBuf), 0);
                 //}
+                delete msgBuf;
                 break;
             }
         case '2':
@@ -246,9 +281,23 @@ void lobby_connection_handler (int _client_socket){
         case '3':
             {
                 //list all the chatrooms
+
+                break;
+            }
+        case '4':
+            {   
+                cout << "CASE 4 yo!\n";
+                reply.status = FAILURE_INVALID;
+                int size = sizeof(reply) + 1;
+                char* msgBuf = new char[size];
+                memcpy(msgBuf, &reply, sizeof(reply));
+
+                send(_client_socket, msgBuf, sizeof(msgBuf), 0);
+                delete msgBuf;
                 break;
             }
         default:
+            cout << "default action" << endl;
             break;
     }
     memset(buf, 0, sizeof(buf));
