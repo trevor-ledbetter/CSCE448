@@ -181,7 +181,8 @@ struct Reply process_command(const int sockfd, char* command)
 	length = recv(sockfd, replyBuffer, MAX_DATA, 0);
 	struct Reply reply = *(Reply*)replyBuffer;
 
-	delete replyBuffer;
+	memset(replyBuffer, 0, sizeof(replyBuffer));
+	delete[] replyBuffer;
 	delete firstCharacter;
 	return reply; 
 }

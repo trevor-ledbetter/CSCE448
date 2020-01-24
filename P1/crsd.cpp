@@ -83,7 +83,6 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
         reply.status = FAILURE_INVALID;
         return reply;
     }
-
     // Get reference to data
     roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
 
@@ -97,18 +96,33 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
 
     // Make room and notify client
     for (auto Idx = 0; Idx < MAX_ROOM; Idx++) {
-        cout << "for" << endl;
+        // Initialize database entry
+        cout << "Current room: " << room_db[Idx].room_name << endl;
         if (strlen(room_db[Idx].room_name) == 0) {
+            // Critical Section
+            sem_wait(shared_sem);
             strncpy(room_db[Idx].room_name, _room_name.c_str(), MAX_NAME);
-            // Initialize db entry
             room_db[Idx].num_members = 0;
             room_db[Idx].port_num = PORT_START + Idx;
             room_db[Idx].slave_socket.fill(-1);
-            room_db[Idx].chatroom_process = -1;
+            sem_post(shared_sem);
+            // End Critical Section
+
             // Create process
-            // if (fork() == 0) { // Parent
-            reply.status = SUCCESS;
-            return reply;
+            if (fork() == 0) { // Child"
+                // Critical Section
+                sem_wait(shared_sem);
+                room_db[Idx].chatroom_process = getpid();
+                sem_post(shared_sem);
+                // End Critical Section
+
+                // Start chatroom server
+                execlp("./server ", to_string(room_db[Idx].port_num).c_str(), NULL);
+            } else {    // Parent
+                reply.status = SUCCESS;
+                return reply;   
+            }
+            break;
         }
     }
 
@@ -189,7 +203,7 @@ void lobby_connection_handler (int _client_socket){
     //Parse command
     string command_str(buf); //convert to std::string
     string room_name(command_str.begin()+1, command_str.end());
-    cout << "Message recieved is: " << command_str << endl;
+    cout << "Message received is: " << command_str << endl;
     char firstChar = command_str[0];
     struct Reply reply;
     switch(firstChar){
@@ -236,7 +250,7 @@ void lobby_connection_handler (int _client_socket){
         default:
             break;
     }
-
+    memset(buf, 0, sizeof(buf));
     printf("Closing client socket\n");
 	close(_client_socket);
 }
