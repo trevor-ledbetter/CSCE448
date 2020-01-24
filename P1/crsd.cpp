@@ -117,7 +117,7 @@ struct Reply room_creation_handler (int _client_socket, string _room_name) {
                 // End Critical Section
 
                 // Start chatroom server
-                // execlp("./server ", to_string(room_db[Idx].port_num).c_str(), NULL);
+                execlp("./server", "./server", to_string(room_db[Idx].port_num).c_str(), NULL);
                 exit(0);
             } else {    // Parent
                 reply.status = SUCCESS;
@@ -405,7 +405,7 @@ void chatroom_server(char* port, Room* _room_ptr) {
         exit(1);
     }
 	int serverID = atoi(port) - PORT_START;
-    printf("Chat Server[%d]: waiting for connections...\n", serverID);
+    printf("Chat Server[%d]-%s: waiting for connections...\n", serverID, _room_ptr->room_name);
 	while(1) 
 	{  // main accept() loop
         sin_size = sizeof their_addr;
@@ -471,7 +471,7 @@ int main (int ac, char ** av)
         close(shmFD);
         shared_data = shared_start + sizeof(sem_t);
         shared_sem = (sem_t*)shared_start;
-        printf("TEST2: %d", reinterpret_cast<roomDB_t*>(shared_data)->at(0).num_members);
+        printf("Starting Chatroom Process: %d\n", reinterpret_cast<roomDB_t*>(shared_data)->at(0).num_members);
 
         roomDB_t* db_ptr = reinterpret_cast<roomDB_t*>(shared_data);
         Room* process_chatroom = nullptr;
