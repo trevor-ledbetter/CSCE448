@@ -365,6 +365,8 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
     }
     printf("No longer connected to client on socket: %d. Closing...", _client_socket);
     close(_client_socket);
+    // Critical Region
+    sem_wait(shared_sem);
     _room_ptr->num_members -= 1;
     for (int &currSock : _room_ptr->slave_socket) {
         if (currSock == _client_socket) {
@@ -372,6 +374,8 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
             break;
         }
     }
+    sem_post(shared_sem);
+    // End Critical Region
 }
 
 /**
