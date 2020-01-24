@@ -59,26 +59,19 @@ int main(int argc, char** argv)
     
 		//prompts user for input and copies to command
 		char command[MAX_DATA];
+		memset(command, '\0', 80);
+		//char* command = new char[MAX_DATA];
         get_command(command, MAX_DATA);
 
 		struct Reply reply = process_command(sockfd, command);
 		display_reply(command, reply);
 		
 		touppercase(command, strlen(command) - 1);
-		//if (strncmp(command, "JOIN", 4) == 0 && reply.status == SUCCESS) {
-		/*if (strncmp(command, "JOIN", 4) == 0) {
-			switch (reply.status) {
-				case SUCCESS:
-					printf("Now you are in the chatmode\n");
-					process_chatmode(argv[1], reply.port);
-					break;
-				default:
-					break;
-			}
-		}*/
-		if (strncmp(command, "JOIN", 4) == 0) {
+		if (strncmp(command, "JOIN", 4) == 0 && reply.status == SUCCESS) {
+		//if (strncmp(command, "JOIN", 4) == 0) {
 			printf("Now you are in the chatmode\n");
 			process_chatmode(argv[1], reply.port);
+
 		}
 		close(sockfd);
     }
@@ -89,6 +82,7 @@ int main(int argc, char** argv)
 
 int connect_to(const char *host, const int port)
 {	
+	cout << "connect_to port: " << port << endl;
 	/*
 	The following connection code was adapted from one of Dr. Tanzir's 313 projects.
 	*/
@@ -131,7 +125,7 @@ int connect_to(const char *host, const int port)
 		return -1;
 	}
 
-	printf("Sucessfully connected to, %s\n", host);
+	//printf("Sucessfully connected to, %s\n", host);
 	return sockfd;
 }
 
@@ -139,15 +133,19 @@ int connect_to(const char *host, const int port)
 struct Reply process_command(const int sockfd, char* command)
 {
 	//Parse the command into two strings: action and roomName
-	char* action;
-	char* roomName;
+
+	char* action = new char;
+	char* roomName = new char;
+	memset(action, 0, sizeof(action));
+	memset(roomName, 0, sizeof(roomName));
+
 	int lengthOfCommand = strlen(command);
 	char commandArray[lengthOfCommand];
 	strcpy(commandArray, command);
 
+
 	char* token = strtok(commandArray, " ");
 	action = token;
-
 	int count = 0;
 	while(token != NULL)
 	{
@@ -180,18 +178,26 @@ struct Reply process_command(const int sockfd, char* command)
 		*firstCharacter = '4';
 	}
 
+
+	string strAction = string(action);
+	string strRoomName = string(roomName);
+	const char* help = strRoomName.c_str();
+
 	//copy the firstCharacter then roomName to message
 	int roomNameLength = 0;
-	if(count==2){ //for LIST
+	if(count==2){
 		roomNameLength += strlen(roomName);
 	}
-	char message[1+roomNameLength];
+	//char message[1+roomNameLength];
+	char* message = new char[1+roomNameLength];
 
 	if(count==1){  //for LIST
-		strcpy(message, firstCharacter);
+		//strcpy(message, firstCharacter);
+		memcpy(message, firstCharacter, 1);
 	}else{  //for all other
-		strcpy(message, firstCharacter);
-		strcat(message, roomName);
+		//strcpy(message, firstCharacter);
+		memcpy(message, firstCharacter, sizeof(firstCharacter));
+		strncat(message, roomName, sizeof(roomName));
 	}
 
 	//send message to the server using send()
@@ -204,9 +210,7 @@ struct Reply process_command(const int sockfd, char* command)
 		return reply_error;
 	}
 
-	//int length;
-	//length = recv(sockfd, replyBuffer, MAX_DATA, 0);
-
+	//for each command the client will recieve different info back
 	char* replyBuffer = new char[MAX_DATA];
 	struct Reply reply;
 	reply.status = FAILURE_INVALID;
@@ -238,18 +242,11 @@ struct Reply process_command(const int sockfd, char* command)
 
 				char* portBuf = new char;
 				recv(sockfd, portBuf, MAX_DATA, 0);
-				cout << "portBuf is: " << portBuf << endl;
 				reply.port = atoi(portBuf);
 
 				char* num_memberBuf = new char;
 				recv(sockfd, num_memberBuf, MAX_DATA, 0);
-				cout << "num_memberBuf is: " << num_memberBuf << endl;
 				reply.num_member = atoi(num_memberBuf);
-
-
-				cout << "reply.status: " << reply.status << endl;
-				cout << "reply.port: " << reply.port << endl;
-				cout << "reply.num_member: " << reply.num_member << endl;
 				
 
 				memset(portBuf, 0, sizeof(portBuf));
@@ -272,9 +269,6 @@ struct Reply process_command(const int sockfd, char* command)
 				char* list = listBuffer;
 				//reply.list_room = listBuffer;
 				memcpy(reply.list_room, listBuffer, 256);
-				cout << "reply list room: " << reply.list_room << endl;
-				cout << "listBuffer: " << listBuffer << endl;
-				printf("printf %s\n", listBuffer);
 				memset(listBuffer, 0, sizeof(listBuffer));
 				delete[] listBuffer;
 				break;
@@ -293,12 +287,14 @@ struct Reply process_command(const int sockfd, char* command)
 
 	//struct Reply reply = *(Reply*)replyBuffer;
 	memset(replyBuffer, 0, sizeof(replyBuffer));
+	//memset(action, 0, sizeof(action));
+	//memset(roomName, 0, sizeof(roomName));
+
 	delete[] replyBuffer;
 
 	delete firstCharacter;
 	return reply; 
 }
-
 
 void process_chatmode(const char* host, const int port)
 {
@@ -381,7 +377,7 @@ void process_chatmode(const char* host, const int port)
 				printf("error with send in client\n");
 			}
 			if (waitpid(childPID, 0, WNOHANG) > 0) {
-				printf("Reaped child, closing parent client process\n");
+				//printf("Reaped child, closing parent client process\n");
 				exit(0);
 			}
 		}

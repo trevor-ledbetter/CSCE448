@@ -262,9 +262,7 @@ struct Reply room_list_handler() {
  * 
  * @param _client_socket Client slave socket file descriptor
  * */
-void lobby_connection_handler (int _client_socket){
-    printf("Connected to client socket %d\n", _client_socket);
-    
+void lobby_connection_handler (int _client_socket){    
     char buf [MAX_DATA];
     memset(buf, 0, sizeof(buf));
     //Recieve command from client
@@ -345,7 +343,6 @@ void lobby_connection_handler (int _client_socket){
 
                     char* portBuf = new char;
                     sprintf(portBuf, "%d", reply.port);
-                    cout << "SENDING PORT: " << portBuf << endl;
                     send(_client_socket, portBuf, sizeof(portBuf), 0);
 
                     char* num_memberBuf = new char;
@@ -372,15 +369,9 @@ void lobby_connection_handler (int _client_socket){
                     char* msgBuf = new char[size];
                     memcpy(msgBuf, &stat, size);
                     send(_client_socket, msgBuf, size, 0);
-                    /*char* list = reply.list_room;list_room
 
-                    /*char* list = reply.list_room;
-                    char* msgBuf2 = new char[256];list_room
-                    memcpy(msgBuf2, &(reply.list_room), 256);                    /*char* list = reply.list_room;
-
-                    send(_client_socket, msgBuf2, sizeof(msgBuf2), 0);*/
-                    cout << "reply.list_room size is: " << sizeof(reply.list_room) << endl;
-                    cout << "case list: " << reply.list_room << endl;
+                    //cout << "reply.list_room size is: " << sizeof(reply.list_room) << endl;
+                    //cout << "case list: " << reply.list_room << endl;
 
                     send(_client_socket, &reply.list_room, sizeof(reply.list_room), 0);
 
@@ -390,14 +381,7 @@ void lobby_connection_handler (int _client_socket){
                 }
             case '4':
                 {   
-                    /*reply.status = FAILURE_INVALID;
-                    int size = sizeof(reply) + 1;
-                    char* msgBuf = new char[size];
-                    memcpy(msgBuf, &reply, sizeof(reply));
 
-                    send(_client_socket, msgBuf, sizeof(msgBuf), 0);
-                    delete msgBuf;
-                    break;*/
                     reply.status = FAILURE_INVALID;
                     enum Status stat = reply.status;
                     int size = sizeof(stat);
@@ -412,8 +396,8 @@ void lobby_connection_handler (int _client_socket){
         }
     }
 
-    printf("Closing client socket\n");
-	    close(_client_socket);
+    //printf("Closing client socket\n");
+    close(_client_socket);
 }
 
 
@@ -423,7 +407,7 @@ void lobby_connection_handler (int _client_socket){
  * @param _client_socket    Client slave socket file descriptor
  * */
 void chatroom_send_handler(int _client_socket, string _msg, int _msg_override_opt = 0) {
-    printf("Connected to Chatroom:Send on slave socket: %d", _client_socket);
+    //printf("Connected to Chatroom:Send on slave socket: %d", _client_socket);
 
     // Add message to buffer
     char buf [MAX_DATA];
@@ -461,7 +445,7 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
     sem_post(shared_sem);
     // End critical region
 
-    printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);
+    //printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);
 
     char buf [MAX_DATA];
     memset(buf, 0, sizeof(buf));
@@ -499,7 +483,7 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
             }
         }
     }
-    printf("No longer connected to client on socket: %d. Closing...", _client_socket);
+    //printf("No longer connected to client on socket: %d. Closing...", _client_socket);
     close(_client_socket);
     // Critical Region
     sem_wait(shared_sem);
@@ -554,7 +538,7 @@ int server (char* port)
         exit(1);
     }
 	
-    printf("server: waiting for connections...\n");
+    //printf("server: waiting for connections...\n");
 	while(1) 
 	{  // main accept() loop
         sin_size = sizeof their_addr;
@@ -609,7 +593,7 @@ void chatroom_server(char* port, Room* _room_ptr) {
         exit(1);
     }
 	int serverID = atoi(port) - PORT_START;
-    printf("Chat Server[%d]-%s: waiting for connections on port %s...\n", serverID, _room_ptr->room_name, port);
+    //printf("Chat Server[%d]-%s: waiting for connections on port %s...\n", serverID, _room_ptr->room_name, port);
 	while(1) 
 	{  // main accept() loop
         sin_size = sizeof their_addr;
@@ -636,7 +620,7 @@ void handle_termination_master(int _sig) {
     } else if (_sig == SIGTERM) {
         printf("Server shutting down (Termination signal)\n");
     }
-    printf("Handling signal from master\n");
+    //printf("Handling signal from master\n");
 
     // Kill all chatroom processes
     roomDB_t* db_ptr = reinterpret_cast<roomDB_t*>(shared_data);
@@ -660,7 +644,7 @@ void handle_termination_slave(int _sig) {
     } else if (_sig == SIGTERM) {
         printf("Server shutting down (Termination signal)\n");
     }
-    printf("Handling signal from slave\n");
+    //printf("Handling signal from slave\n");
     munmap(shared_start, SHARED_MEMORY_SIZE);
     shm_unlink(SHARED_MEMORY_NAME);
     exit(0);
@@ -684,7 +668,7 @@ int main (int ac, char ** av)
         close(shmFD);
         shared_data = shared_start + sizeof(sem_t);
         shared_sem = (sem_t*)shared_start;
-        printf("Starting a Chatroom Process\n");
+        //printf("Starting a Chatroom Process\n");
 
         roomDB_t* db_ptr = reinterpret_cast<roomDB_t*>(shared_data);
         Room* process_chatroom = nullptr;
@@ -697,7 +681,7 @@ int main (int ac, char ** av)
 
         chatroom_server(av[1], process_chatroom);
     } else {
-        printf("Starting lobby server\n");
+        //printf("Starting lobby server\n");
 
         signal(SIGINT,  handle_termination_master);
         signal(SIGTERM, handle_termination_master);
@@ -727,6 +711,6 @@ int main (int ac, char ** av)
 
         server (av [1]);	
     }
-    printf("Server shutting down (end of main)\n");
+    //printf("Server shutting down (end of main)\n");
     handle_termination_master(0);
 }
