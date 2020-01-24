@@ -146,7 +146,7 @@ struct Reply room_deletion_handler_master(string _room_name) {
     
     // Ensure room can be deleted
     Room* roomPending = nullptr;
-    for (Room currRoom : room_db) {
+    for (Room &currRoom : room_db) {
         if (string(currRoom.room_name) == _room_name) {
             roomPending = &currRoom;
             break;
