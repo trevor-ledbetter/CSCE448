@@ -191,9 +191,44 @@ struct Reply room_deletion_handler_master(string _room_name) {
     return reply;
 }
 
+struct Reply room_join_handler_master(string _room_name) {
+    struct Reply reply;
+    reply.status = SUCCESS;
+    
+    // Get reference to data
+    roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
+
+    // Iterate through all rooms and see if room exists
+    Room* roomRequested = nullptr;
+    for (Room &currRoom : room_db) {
+        if (string(currRoom.room_name) == _room_name) {
+            roomRequested = &currRoom;
+            break;
+        }
+    }
+    if (roomRequested == nullptr) {
+        perror("Could not find room with specified name");
+        reply.status = FAILURE_NOT_EXISTS;
+        return reply;
+    }
+
+    // See if there is an open spot
+    if (roomRequested->num_members >= MAX_MEMBER) {
+        perror("Could not add client to full room");
+        reply.status = FAILURE_INVALID;
+        return reply;
+    }
+
+    // Return appropriate reply
+    reply.port = roomRequested->port_num;
+    cout << "TEST::" << reply.port << endl;
+    reply.num_member = roomRequested->num_members;
+    return reply;
+}
+
 struct Reply room_list_handler() {
     struct Reply reply;
-
+    sizeof(Reply::status);
     // Get reference to data
     roomDB_t &room_db = *reinterpret_cast<roomDB_t*>(shared_data);
 
@@ -290,6 +325,16 @@ void lobby_connection_handler (int _client_socket){
                     //1. check if room exists
                     //2. check if there is an open spot
                     //3. return a REPLY with the room
+                    reply = room_join_handler_master(room_name);
+                    cout << "DEB::reply.port: " << reply.port << endl;
+                    int size = sizeof(Reply) + 1;
+                    char* msgBuf = new char[size];
+                    memcpy(msgBuf, &reply, sizeof(Reply));
+                    
+                    cout << "DEB::msgBuf: " << msgBuf << endl;
+                    cout << "DEB::portfrombuf: " << ((Reply*)msgBuf)->port << endl;
+                    send(_client_socket, msgBuf, sizeof(Reply), 0);
+                    delete msgBuf;
                     break;
                 }
             case '3':
@@ -350,6 +395,19 @@ void chatroom_send_handler(int _client_socket, string _msg, int _msg_override_op
  * @param _room_ptr         Pointer to Room object in shared memory
  * */
 void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
+    // Add client to chatroom
+    // Critical Section
+    sem_wait(shared_sem);
+    _room_ptr->num_members += 1;
+    for (int &currSock : _room_ptr->slave_socket) {
+        if (currSock == -1) {
+            currSock = _client_socket;
+            break;
+        }
+    }
+    sem_post(shared_sem);
+    // End critical region
+
     printf("Connected to Chatroom:Listen on slave socket: %d", _client_socket);
 
     char buf [MAX_DATA];
