@@ -164,7 +164,7 @@ struct Reply room_deletion_handler_master(string _room_name) {
     vector<thread> senderThreads;
     for (auto It = roomPending->slave_socket.begin(); It != roomPending->slave_socket.end(); It++) {
         if (*It != -1) {
-            thread sendThread(chatroom_send_handler, *It, "0", 1);
+            thread sendThread(chatroom_send_handler, *It, "3", 1);
             senderThreads.push_back(std::move(sendThread));
         }
     }
@@ -379,7 +379,7 @@ void chatroom_send_handler(int _client_socket, string _msg, int _msg_override_op
     if (_msg_override_opt == 0) {
         strncpy(buf, _msg.c_str(), MAX_DATA);
     } else if (_msg_override_opt == 1) {
-        memset(buf, '\0', 1);
+        memset(buf, 3, sizeof(buf));
     }
 
     // Send to client
@@ -431,14 +431,16 @@ void chatroom_listen_handler(int _client_socket, Room* _room_ptr) {
         }
 
         // Check if buffer has content, otherwise assume client disconnected and just break loop
-        if (buf[0] == '\0') {
+        if (buf[0] == 3) {
             printf("Exiting listen handler thread due to client DC");
             break;
         }
 
+        cout << "RM[" << _room_ptr->room_name << "]: " << buf << endl;
+
         // Send message to other clients
         for (int currSocket : _room_ptr->slave_socket) {
-            if (currSocket != -1) {
+            if (currSocket != -1 && currSocket != _client_socket) {
                 thread sendThread(chatroom_send_handler, currSocket, string(buf), 0);
                 sendThread.detach();
             }
