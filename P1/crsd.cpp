@@ -227,6 +227,7 @@ void lobby_connection_handler (int _client_socket){
     printf("Connected to client socket %d\n", _client_socket);
     
     char buf [MAX_DATA];
+    memset(buf, 0, sizeof(buf));
     //Recieve command from client
     if (recv (_client_socket, buf, sizeof(buf), 0) < 0){
         perror ("server: Receive failure");    
@@ -309,7 +310,6 @@ void lobby_connection_handler (int _client_socket){
                 cout << "default action" << endl;
                 break;
         }
-    memset(buf, 0, sizeof(buf));
     }
     printf("Closing client socket\n");
 	close(_client_socket);
