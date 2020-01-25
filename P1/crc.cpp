@@ -82,7 +82,6 @@ int main(int argc, char** argv)
 
 int connect_to(const char *host, const int port)
 {	
-	cout << "connect_to port: " << port << endl;
 	/*
 	The following connection code was adapted from one of Dr. Tanzir's 313 projects.
 	*/
@@ -336,10 +335,13 @@ void process_chatmode(const char* host, const int port)
 			} else if (FD_ISSET(sockfd, &readFDSet)) {
 				int length = recv(sockfd, buf, MAX_DATA, 0);
 				if (buf[0] == 3 || length == 0) {
-					string msg_s = "Chatroom closing. Closing client...\n";
+					//string msg_s = "Chatroom closing. Closing client...\n";
+					string msg_s = "Warning: the chatting room is going to be closed...\n";
 					strncpy(buf, msg_s.c_str(), sizeof(buf));
 					display_message(buf);
-					exit(0);
+					display_title();
+					return;
+					//exit(0);
 				}
 
 				display_message(buf);
