@@ -59,7 +59,7 @@ int main(int argc, char** argv)
     
 		//prompts user for input and copies to command
 		char command[MAX_DATA];
-		memset(command, '\0', 80);
+		memset(command, 0, sizeof(command));
 		//char* command = new char[MAX_DATA];
         get_command(command, MAX_DATA);
 
@@ -146,6 +146,13 @@ struct Reply process_command(const int sockfd, char* command)
 	char* token = strtok(commandArray, " ");
 	action = token;
 	int count = 0;
+
+	if (action == NULL) {
+		Reply failReply;
+		failReply.status = FAILURE_UNKNOWN;
+		return failReply;
+	}
+
 	while(token != NULL)
 	{
 		if(count == 1) //second argument
@@ -165,6 +172,7 @@ struct Reply process_command(const int sockfd, char* command)
 	}
 
 	char* firstCharacter = new char[1];
+	memset(firstCharacter, 0, sizeof(firstCharacter));
 	if(strcmp(action,"CREATE") == 0 || strcmp(action,"create") == 0){
 		*firstCharacter = '0';
 	}else if(strcmp(action,"DELETE") == 0 || strcmp(action,"delete") == 0){
@@ -211,6 +219,7 @@ struct Reply process_command(const int sockfd, char* command)
 
 	//for each command the client will recieve different info back
 	char* replyBuffer = new char[MAX_DATA];
+	memset(replyBuffer, 0, sizeof(replyBuffer));
 	struct Reply reply;
 	reply.status = FAILURE_INVALID;
 	switch(*firstCharacter){
@@ -285,7 +294,6 @@ struct Reply process_command(const int sockfd, char* command)
 	}
 
 	//struct Reply reply = *(Reply*)replyBuffer;
-	memset(replyBuffer, 0, sizeof(replyBuffer));
 	//memset(action, 0, sizeof(action));
 	//memset(roomName, 0, sizeof(roomName));
 
