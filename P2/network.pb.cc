@@ -192,7 +192,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
-  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::network::FollowReply, name_),
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::network::FollowReply, ireplyvalue_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::network::UnfollowRequest, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -204,6 +204,7 @@ const ::google::protobuf::uint32 TableStruct::offsets[] GOOGLE_PROTOBUF_ATTRIBUT
   ~0u,  // no _extensions_
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
+  GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::network::UnfollowReply, ireplyvalue_),
   ~0u,  // no _has_bits_
   GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(::network::ListRequest, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -220,8 +221,8 @@ static const ::google::protobuf::internal::MigrationSchema schemas[] GOOGLE_PROT
   { 6, -1, sizeof(::network::FollowReply)},
   { 12, -1, sizeof(::network::UnfollowRequest)},
   { 18, -1, sizeof(::network::UnfollowReply)},
-  { 23, -1, sizeof(::network::ListRequest)},
-  { 28, -1, sizeof(::network::ListReply)},
+  { 24, -1, sizeof(::network::ListRequest)},
+  { 29, -1, sizeof(::network::ListReply)},
 };
 
 static ::google::protobuf::Message const * const file_default_instances[] = {
@@ -256,16 +257,18 @@ void AddDescriptorsImpl() {
   InitDefaults();
   static const char descriptor[] GOOGLE_PROTOBUF_ATTRIBUTE_SECTION_VARIABLE(protodesc_cold) = {
       "\n\rnetwork.proto\022\007network\"\035\n\rFollowReques"
-      "t\022\014\n\004name\030\001 \001(\t\"\033\n\013FollowReply\022\014\n\004name\030\001"
-      " \001(\t\"\037\n\017UnfollowRequest\022\014\n\004name\030\001 \001(\t\"\017\n"
-      "\rUnfollowReply\"\r\n\013ListRequest\"\013\n\tListRep"
-      "ly2\?\n\003SNS\0228\n\006Follow\022\026.network.FollowRequ"
-      "est\032\024.network.FollowReply\"\000B6\n\033io.grpc.e"
-      "xamples.helloworldB\017HelloWorldProtoP\001\242\002\003"
-      "HLWb\006proto3"
+      "t\022\014\n\004name\030\001 \001(\t\"\"\n\013FollowReply\022\023\n\013IReply"
+      "Value\030\001 \001(\005\"\037\n\017UnfollowRequest\022\014\n\004name\030\001"
+      " \001(\t\"$\n\rUnfollowReply\022\023\n\013IReplyValue\030\001 \001"
+      "(\005\"\r\n\013ListRequest\"\013\n\tListReply2\177\n\003SNS\0228\n"
+      "\006Follow\022\026.network.FollowRequest\032\024.networ"
+      "k.FollowReply\"\000\022>\n\010Unfollow\022\030.network.Un"
+      "followRequest\032\026.network.UnfollowReply\"\000B"
+      "6\n\033io.grpc.examples.helloworldB\017HelloWor"
+      "ldProtoP\001\242\002\003HLWb\006proto3"
   };
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      descriptor, 291);
+      descriptor, 383);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "network.proto", &protobuf_RegisterTypes);
 }
@@ -544,7 +547,7 @@ void FollowRequest::InternalSwap(FollowRequest* other) {
 void FollowReply::InitAsDefaultInstance() {
 }
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
-const int FollowReply::kNameFieldNumber;
+const int FollowReply::kIReplyValueFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 FollowReply::FollowReply()
@@ -560,15 +563,12 @@ FollowReply::FollowReply(const FollowReply& from)
       _internal_metadata_(NULL),
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  name_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  if (from.name().size() > 0) {
-    name_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.name_);
-  }
+  ireplyvalue_ = from.ireplyvalue_;
   // @@protoc_insertion_point(copy_constructor:network.FollowReply)
 }
 
 void FollowReply::SharedCtor() {
-  name_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  ireplyvalue_ = 0;
   _cached_size_ = 0;
 }
 
@@ -578,7 +578,6 @@ FollowReply::~FollowReply() {
 }
 
 void FollowReply::SharedDtor() {
-  name_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
 void FollowReply::SetCachedSize(int size) const {
@@ -610,7 +609,7 @@ void FollowReply::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
-  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  ireplyvalue_ = 0;
   _internal_metadata_.Clear();
 }
 
@@ -624,16 +623,14 @@ bool FollowReply::MergePartialFromCodedStream(
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // string name = 1;
+      // int32 IReplyValue = 1;
       case 1: {
         if (static_cast< ::google::protobuf::uint8>(tag) ==
-            static_cast< ::google::protobuf::uint8>(10u /* 10 & 0xFF */)) {
-          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
-                input, this->mutable_name()));
-          DO_(::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-            this->name().data(), static_cast<int>(this->name().length()),
-            ::google::protobuf::internal::WireFormatLite::PARSE,
-            "network.FollowReply.name"));
+            static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &ireplyvalue_)));
         } else {
           goto handle_unusual;
         }
@@ -666,14 +663,9 @@ void FollowReply::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // string name = 1;
-  if (this->name().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->name().data(), static_cast<int>(this->name().length()),
-      ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "network.FollowReply.name");
-    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
-      1, this->name(), output);
+  // int32 IReplyValue = 1;
+  if (this->ireplyvalue() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->ireplyvalue(), output);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -690,15 +682,9 @@ void FollowReply::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  // string name = 1;
-  if (this->name().size() > 0) {
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-      this->name().data(), static_cast<int>(this->name().length()),
-      ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-      "network.FollowReply.name");
-    target =
-      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        1, this->name(), target);
+  // int32 IReplyValue = 1;
+  if (this->ireplyvalue() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->ireplyvalue(), target);
   }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
@@ -718,11 +704,11 @@ size_t FollowReply::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
-  // string name = 1;
-  if (this->name().size() > 0) {
+  // int32 IReplyValue = 1;
+  if (this->ireplyvalue() != 0) {
     total_size += 1 +
-      ::google::protobuf::internal::WireFormatLite::StringSize(
-        this->name());
+      ::google::protobuf::internal::WireFormatLite::Int32Size(
+        this->ireplyvalue());
   }
 
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
@@ -754,9 +740,8 @@ void FollowReply::MergeFrom(const FollowReply& from) {
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
-  if (from.name().size() > 0) {
-
-    name_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.name_);
+  if (from.ireplyvalue() != 0) {
+    set_ireplyvalue(from.ireplyvalue());
   }
 }
 
@@ -784,7 +769,7 @@ void FollowReply::Swap(FollowReply* other) {
 }
 void FollowReply::InternalSwap(FollowReply* other) {
   using std::swap;
-  name_.Swap(&other->name_);
+  swap(ireplyvalue_, other->ireplyvalue_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_cached_size_, other->_cached_size_);
 }
@@ -1056,6 +1041,7 @@ void UnfollowRequest::InternalSwap(UnfollowRequest* other) {
 void UnfollowReply::InitAsDefaultInstance() {
 }
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
+const int UnfollowReply::kIReplyValueFieldNumber;
 #endif  // !defined(_MSC_VER) || _MSC_VER >= 1900
 
 UnfollowReply::UnfollowReply()
@@ -1071,10 +1057,12 @@ UnfollowReply::UnfollowReply(const UnfollowReply& from)
       _internal_metadata_(NULL),
       _cached_size_(0) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
+  ireplyvalue_ = from.ireplyvalue_;
   // @@protoc_insertion_point(copy_constructor:network.UnfollowReply)
 }
 
 void UnfollowReply::SharedCtor() {
+  ireplyvalue_ = 0;
   _cached_size_ = 0;
 }
 
@@ -1115,6 +1103,7 @@ void UnfollowReply::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  ireplyvalue_ = 0;
   _internal_metadata_.Clear();
 }
 
@@ -1127,12 +1116,31 @@ bool UnfollowReply::MergePartialFromCodedStream(
     ::std::pair< ::google::protobuf::uint32, bool> p = input->ReadTagWithCutoffNoLastTag(127u);
     tag = p.first;
     if (!p.second) goto handle_unusual;
-  handle_unusual:
-    if (tag == 0) {
-      goto success;
+    switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
+      // int32 IReplyValue = 1;
+      case 1: {
+        if (static_cast< ::google::protobuf::uint8>(tag) ==
+            static_cast< ::google::protobuf::uint8>(8u /* 8 & 0xFF */)) {
+
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &ireplyvalue_)));
+        } else {
+          goto handle_unusual;
+        }
+        break;
+      }
+
+      default: {
+      handle_unusual:
+        if (tag == 0) {
+          goto success;
+        }
+        DO_(::google::protobuf::internal::WireFormat::SkipField(
+              input, tag, _internal_metadata_.mutable_unknown_fields()));
+        break;
+      }
     }
-    DO_(::google::protobuf::internal::WireFormat::SkipField(
-          input, tag, _internal_metadata_.mutable_unknown_fields()));
   }
 success:
   // @@protoc_insertion_point(parse_success:network.UnfollowReply)
@@ -1149,6 +1157,11 @@ void UnfollowReply::SerializeWithCachedSizes(
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
+  // int32 IReplyValue = 1;
+  if (this->ireplyvalue() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(1, this->ireplyvalue(), output);
+  }
+
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     ::google::protobuf::internal::WireFormat::SerializeUnknownFields(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()), output);
@@ -1162,6 +1175,11 @@ void UnfollowReply::SerializeWithCachedSizes(
   // @@protoc_insertion_point(serialize_to_array_start:network.UnfollowReply)
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
+
+  // int32 IReplyValue = 1;
+  if (this->ireplyvalue() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(1, this->ireplyvalue(), target);
+  }
 
   if ((_internal_metadata_.have_unknown_fields() &&  ::google::protobuf::internal::GetProto3PreserveUnknownsDefault())) {
     target = ::google::protobuf::internal::WireFormat::SerializeUnknownFieldsToArray(
@@ -1180,6 +1198,13 @@ size_t UnfollowReply::ByteSizeLong() const {
       ::google::protobuf::internal::WireFormat::ComputeUnknownFieldsSize(
         (::google::protobuf::internal::GetProto3PreserveUnknownsDefault()   ? _internal_metadata_.unknown_fields()   : _internal_metadata_.default_instance()));
   }
+  // int32 IReplyValue = 1;
+  if (this->ireplyvalue() != 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::Int32Size(
+        this->ireplyvalue());
+  }
+
   int cached_size = ::google::protobuf::internal::ToCachedSize(total_size);
   GOOGLE_SAFE_CONCURRENT_WRITES_BEGIN();
   _cached_size_ = cached_size;
@@ -1209,6 +1234,9 @@ void UnfollowReply::MergeFrom(const UnfollowReply& from) {
   ::google::protobuf::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (from.ireplyvalue() != 0) {
+    set_ireplyvalue(from.ireplyvalue());
+  }
 }
 
 void UnfollowReply::CopyFrom(const ::google::protobuf::Message& from) {
@@ -1235,6 +1263,7 @@ void UnfollowReply::Swap(UnfollowReply* other) {
 }
 void UnfollowReply::InternalSwap(UnfollowReply* other) {
   using std::swap;
+  swap(ireplyvalue_, other->ireplyvalue_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_cached_size_, other->_cached_size_);
 }

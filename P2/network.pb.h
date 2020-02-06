@@ -276,25 +276,17 @@ class FollowReply : public ::google::protobuf::Message /* @@protoc_insertion_poi
 
   // accessors -------------------------------------------------------
 
-  // string name = 1;
-  void clear_name();
-  static const int kNameFieldNumber = 1;
-  const ::std::string& name() const;
-  void set_name(const ::std::string& value);
-  #if LANG_CXX11
-  void set_name(::std::string&& value);
-  #endif
-  void set_name(const char* value);
-  void set_name(const char* value, size_t size);
-  ::std::string* mutable_name();
-  ::std::string* release_name();
-  void set_allocated_name(::std::string* name);
+  // int32 IReplyValue = 1;
+  void clear_ireplyvalue();
+  static const int kIReplyValueFieldNumber = 1;
+  ::google::protobuf::int32 ireplyvalue() const;
+  void set_ireplyvalue(::google::protobuf::int32 value);
 
   // @@protoc_insertion_point(class_scope:network.FollowReply)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
-  ::google::protobuf::internal::ArenaStringPtr name_;
+  ::google::protobuf::int32 ireplyvalue_;
   mutable int _cached_size_;
   friend struct ::protobuf_network_2eproto::TableStruct;
   friend void ::protobuf_network_2eproto::InitDefaultsFollowReplyImpl();
@@ -490,10 +482,17 @@ class UnfollowReply : public ::google::protobuf::Message /* @@protoc_insertion_p
 
   // accessors -------------------------------------------------------
 
+  // int32 IReplyValue = 1;
+  void clear_ireplyvalue();
+  static const int kIReplyValueFieldNumber = 1;
+  ::google::protobuf::int32 ireplyvalue() const;
+  void set_ireplyvalue(::google::protobuf::int32 value);
+
   // @@protoc_insertion_point(class_scope:network.UnfollowReply)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::int32 ireplyvalue_;
   mutable int _cached_size_;
   friend struct ::protobuf_network_2eproto::TableStruct;
   friend void ::protobuf_network_2eproto::InitDefaultsUnfollowReplyImpl();
@@ -750,57 +749,18 @@ inline void FollowRequest::set_allocated_name(::std::string* name) {
 
 // FollowReply
 
-// string name = 1;
-inline void FollowReply::clear_name() {
-  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+// int32 IReplyValue = 1;
+inline void FollowReply::clear_ireplyvalue() {
+  ireplyvalue_ = 0;
 }
-inline const ::std::string& FollowReply::name() const {
-  // @@protoc_insertion_point(field_get:network.FollowReply.name)
-  return name_.GetNoArena();
+inline ::google::protobuf::int32 FollowReply::ireplyvalue() const {
+  // @@protoc_insertion_point(field_get:network.FollowReply.IReplyValue)
+  return ireplyvalue_;
 }
-inline void FollowReply::set_name(const ::std::string& value) {
+inline void FollowReply::set_ireplyvalue(::google::protobuf::int32 value) {
   
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:network.FollowReply.name)
-}
-#if LANG_CXX11
-inline void FollowReply::set_name(::std::string&& value) {
-  
-  name_.SetNoArena(
-    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:network.FollowReply.name)
-}
-#endif
-inline void FollowReply::set_name(const char* value) {
-  GOOGLE_DCHECK(value != NULL);
-  
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:network.FollowReply.name)
-}
-inline void FollowReply::set_name(const char* value, size_t size) {
-  
-  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
-      ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:network.FollowReply.name)
-}
-inline ::std::string* FollowReply::mutable_name() {
-  
-  // @@protoc_insertion_point(field_mutable:network.FollowReply.name)
-  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline ::std::string* FollowReply::release_name() {
-  // @@protoc_insertion_point(field_release:network.FollowReply.name)
-  
-  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-}
-inline void FollowReply::set_allocated_name(::std::string* name) {
-  if (name != NULL) {
-    
-  } else {
-    
-  }
-  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
-  // @@protoc_insertion_point(field_set_allocated:network.FollowReply.name)
+  ireplyvalue_ = value;
+  // @@protoc_insertion_point(field_set:network.FollowReply.IReplyValue)
 }
 
 // -------------------------------------------------------------------
@@ -863,6 +823,20 @@ inline void UnfollowRequest::set_allocated_name(::std::string* name) {
 // -------------------------------------------------------------------
 
 // UnfollowReply
+
+// int32 IReplyValue = 1;
+inline void UnfollowReply::clear_ireplyvalue() {
+  ireplyvalue_ = 0;
+}
+inline ::google::protobuf::int32 UnfollowReply::ireplyvalue() const {
+  // @@protoc_insertion_point(field_get:network.UnfollowReply.IReplyValue)
+  return ireplyvalue_;
+}
+inline void UnfollowReply::set_ireplyvalue(::google::protobuf::int32 value) {
+  
+  ireplyvalue_ = value;
+  // @@protoc_insertion_point(field_set:network.UnfollowReply.IReplyValue)
+}
 
 // -------------------------------------------------------------------
 

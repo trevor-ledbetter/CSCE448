@@ -84,7 +84,7 @@ int Client::connectTo()
     // Please refer to gRpc tutorial how to create a stub.
 	// ------------------------------------------------------------
     
-    std::string address = this->hostname + ":" + this->username;
+    std::string address = this->hostname + ":" + this->port;
     set_stub(address); //sets Client's stub with a channel created with address
     return 1; // return 1 if success, otherwise return -1
 }
@@ -146,10 +146,57 @@ IReply Client::processCommand(std::string& input)
     if(cmd == "FOLLOW"){
         FollowRequest request;
         request.set_name(argument);
-        
+        FollowReply freply;
+        ClientContext context;
+        reply.grpc_status = stub_->Follow(&context, request, &freply);
+        switch(freply.ireplyvalue()){
+            case 0:
+                reply.comm_status = SUCCESS;
+                break;
+            case 1:
+                reply.comm_status = FAILURE_ALREADY_EXISTS;
+                break;
+            case 2:
+                reply.comm_status = FAILURE_NOT_EXISTS;
+                break;
+            case 3:
+                reply.comm_status = FAILURE_INVALID_USERNAME;
+                break;
+            case 4:
+                reply.comm_status = FAILURE_INVALID;
+                break;
+            case 5:
+                reply.comm_status = FAILURE_UNKNOWN;
+                break;
+        }
+
     }else if(cmd == "UNFOLLOW"){
         UnfollowRequest request;
         request.set_name(argument);
+        UnfollowReply ureply;
+        ClientContext context;
+        reply.grpc_status = stub_->Unfollow(&context, request, &ureply);
+        switch(ureply.ireplyvalue()){
+            case 0:
+                reply.comm_status = SUCCESS;
+                break;
+            case 1:
+                reply.comm_status = FAILURE_ALREADY_EXISTS;
+                break;
+            case 2:
+                reply.comm_status = FAILURE_NOT_EXISTS;
+                break;
+            case 3:
+                reply.comm_status = FAILURE_INVALID_USERNAME;
+                break;
+            case 4:
+                reply.comm_status = FAILURE_INVALID;
+                break;
+            case 5:
+                reply.comm_status = FAILURE_UNKNOWN;
+                break;
+        }
+
     }else if(cmd == "LIST"){
 
     }else if(cmd == "TIMELINE"){
