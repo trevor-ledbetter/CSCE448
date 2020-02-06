@@ -13,12 +13,14 @@ package network;
 
 
 service SNS{
-    rpc Follow(FollowRequest) returns (FollowReply){}
-    rpc Unfollow(UnfollowRequest) returns (UnfollowReply){}
+    rpc Follow (FollowRequest) returns (FollowReply) {}
+    rpc Unfollow (UnfollowRequest) returns (UnfollowReply) {}
+    rpc List (ListRequest) returns (ListReply) {}
 } //end SNS
 
 
 message FollowRequest{
+    // Client specifies name to follow
     string name = 1;
 }
 
@@ -27,6 +29,7 @@ message FollowReply{
 }
 
 message UnfollowRequest{
+    // Client specifies name to unfollow
     string name = 1;
 }
 
@@ -35,10 +38,11 @@ message UnfollowReply{
 }
 
 message ListRequest{
-
+    // This can be empty
+    
 }
 
 message ListReply{
-
+    repeated string names = 1;
 }
 

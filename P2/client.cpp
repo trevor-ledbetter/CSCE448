@@ -16,6 +16,8 @@ using network::FollowRequest;
 using network::FollowReply;
 using network::UnfollowRequest;
 using network::UnfollowReply;
+using network::ListRequest;
+using network::ListReply;
 
 
 class Client : public IClient
@@ -143,13 +145,15 @@ IReply Client::processCommand(std::string& input)
     std::string argument = input.substr(index+1, (input.length()-index));
 
     IReply reply;
+    ClientContext clientCtxt;
     if(cmd == "FOLLOW"){
-        FollowRequest request;
-        request.set_name(argument);
-        FollowReply freply;
-        ClientContext context;
-        reply.grpc_status = stub_->Follow(&context, request, &freply);
-        switch(freply.ireplyvalue()){
+        FollowRequest followReq;
+        followReq.set_name(argument);
+        
+        FollowReply followRep;
+        reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
+        if (reply.grpc_status.ok()) {
+            switch(followRep.ireplyvalue()){
             case 0:
                 reply.comm_status = SUCCESS;
                 break;
@@ -168,37 +172,48 @@ IReply Client::processCommand(std::string& input)
             case 5:
                 reply.comm_status = FAILURE_UNKNOWN;
                 break;
+            }
+        }
+        else {
+            reply.comm_status = FAILURE_UNKNOWN;
         }
 
     }else if(cmd == "UNFOLLOW"){
-        UnfollowRequest request;
-        request.set_name(argument);
-        UnfollowReply ureply;
+        UnfollowRequest unfollowReq;
+        unfollowReq.set_name(argument);
+        UnfollowReply unfollowRep;
         ClientContext context;
-        reply.grpc_status = stub_->Unfollow(&context, request, &ureply);
-        switch(ureply.ireplyvalue()){
-            case 0:
-                reply.comm_status = SUCCESS;
-                break;
-            case 1:
-                reply.comm_status = FAILURE_ALREADY_EXISTS;
-                break;
-            case 2:
-                reply.comm_status = FAILURE_NOT_EXISTS;
-                break;
-            case 3:
-                reply.comm_status = FAILURE_INVALID_USERNAME;
-                break;
-            case 4:
-                reply.comm_status = FAILURE_INVALID;
-                break;
-            case 5:
-                reply.comm_status = FAILURE_UNKNOWN;
-                break;
+        reply.grpc_status = stub_->Unfollow(&context, unfollowReq, &unfollowRep);
+        if (reply.grpc_status.ok()) {
+            switch(unfollowRep.ireplyvalue()){
+                case 0:
+                    reply.comm_status = SUCCESS;
+                    break;
+                case 1:
+                    reply.comm_status = FAILURE_ALREADY_EXISTS;
+                    break;
+                case 2:
+                    reply.comm_status = FAILURE_NOT_EXISTS;
+                    break;
+                case 3:
+                    reply.comm_status = FAILURE_INVALID_USERNAME;
+                    break;
+                case 4:
+                    reply.comm_status = FAILURE_INVALID;
+                    break;
+                case 5:
+                    reply.comm_status = FAILURE_UNKNOWN;
+                    break;
+            }
+        }
+        else {
+            reply.comm_status = FAILURE_UNKNOWN;
         }
 
     }else if(cmd == "LIST"){
-
+        ListRequest listReq;
+        ListReply listRep;
+        
     }else if(cmd == "TIMELINE"){
 
     }else{

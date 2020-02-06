@@ -6,3 +6,8 @@ P1/client
 P1/server
 
 *.o
+
+# HW2 Ignores
+P2/P2Solution/
+P2/client
+P2/server
