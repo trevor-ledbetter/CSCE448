@@ -12,8 +12,10 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 using network::SNS;
-using network::TestRequest;
-using network::TestReply;
+using network::FollowRequest;
+using network::FollowReply;
+using network::UnfollowRequest;
+using network::UnfollowReply;
 
 
 class Client : public IClient
@@ -48,7 +50,7 @@ int main(int argc, char** argv) {
 
     std::string hostname = "localhost";
     std::string username = "default";
-    std::string port = "3010";
+    std::string port = "5116";
     int opt = 0;
     while ((opt = getopt(argc, argv, "h:u:p:")) != -1){
         switch(opt) {
@@ -135,8 +137,28 @@ IReply Client::processCommand(std::string& input)
     // "following_users" member variable of IReply.
 	// ------------------------------------------------------------
     
-    IReply ire;
-    return ire;
+    //maybe need to do some more error checking??
+    std::size_t index = input.find_first_of(" ");
+    std::string cmd = input.substr(0, index);\
+    std::string argument = input.substr(index+1, (input.length()-index));
+
+    IReply reply;
+    if(cmd == "FOLLOW"){
+        FollowRequest request;
+        request.set_name(argument);
+        
+    }else if(cmd == "UNFOLLOW"){
+        UnfollowRequest request;
+        request.set_name(argument);
+    }else if(cmd == "LIST"){
+
+    }else if(cmd == "TIMELINE"){
+
+    }else{
+        std::cout << "Invalid Command\n";
+    }
+
+    return reply;
 }
 
 void Client::processTimeline()

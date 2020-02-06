@@ -13,22 +13,32 @@ package network;
 
 
 service SNS{
-    rpc test(TestRequest) returns (TestReply){}
+    rpc Follow(FollowRequest) returns (FollowReply){}
 } //end SNS
 
-message TestRequest{
-    string s = 1;
+
+message FollowRequest{
+    string name = 1;
 }
 
-message TestReply{
-    string s = 1;
+message FollowReply{
+    //IReply da
+    string name = 1;
 }
 
-message Follow{
-    string name =1;
+message UnfollowRequest{
+    string name = 1;
 }
 
-message Unfollow{
-    string name =1;
+message UnfollowReply{
+
+}
+
+message ListRequest{
+
+}
+
+message ListReply{
+
 }
 
