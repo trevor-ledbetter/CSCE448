@@ -16,6 +16,8 @@ using network::FollowRequest;
 using network::FollowReply;
 using network::UnfollowRequest;
 using network::UnfollowReply;
+using network::ListRequest;
+using network::ListReply;
 
 
 class Client : public IClient
@@ -84,7 +86,7 @@ int Client::connectTo()
     // Please refer to gRpc tutorial how to create a stub.
 	// ------------------------------------------------------------
     
-    std::string address = this->hostname + ":" + this->username;
+    std::string address = this->hostname + ":" + this->port;
     set_stub(address); //sets Client's stub with a channel created with address
     return 1; // return 1 if success, otherwise return -1
 }
@@ -143,15 +145,33 @@ IReply Client::processCommand(std::string& input)
     std::string argument = input.substr(index+1, (input.length()-index));
 
     IReply reply;
+    ClientContext clientCtxt;
     if(cmd == "FOLLOW"){
-        FollowRequest request;
-        request.set_name(argument);
+        FollowRequest followReq;
+        followReq.set_name(argument);
         
+        FollowReply followRep;
+        std::cout << "Before stub Follow" << std::endl;
+        reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
+        std::cout << "After stub Follow" << std::endl;
+        if (reply.grpc_status.ok()) {
+            if (followRep.name() != "") {
+                reply.comm_status = SUCCESS;
+            }
+            else {
+                reply.comm_status = FAILURE_NOT_EXISTS;
+            }
+        }
+        else {
+            reply.comm_status = FAILURE_UNKNOWN;
+        }
     }else if(cmd == "UNFOLLOW"){
         UnfollowRequest request;
         request.set_name(argument);
     }else if(cmd == "LIST"){
-
+        ListRequest listReq;
+        ListReply listRep;
+        
     }else if(cmd == "TIMELINE"){
 
     }else{

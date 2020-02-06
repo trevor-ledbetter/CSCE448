@@ -490,10 +490,25 @@ class UnfollowReply : public ::google::protobuf::Message /* @@protoc_insertion_p
 
   // accessors -------------------------------------------------------
 
+  // string name = 1;
+  void clear_name();
+  static const int kNameFieldNumber = 1;
+  const ::std::string& name() const;
+  void set_name(const ::std::string& value);
+  #if LANG_CXX11
+  void set_name(::std::string&& value);
+  #endif
+  void set_name(const char* value);
+  void set_name(const char* value, size_t size);
+  ::std::string* mutable_name();
+  ::std::string* release_name();
+  void set_allocated_name(::std::string* name);
+
   // @@protoc_insertion_point(class_scope:network.UnfollowReply)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::internal::ArenaStringPtr name_;
   mutable int _cached_size_;
   friend struct ::protobuf_network_2eproto::TableStruct;
   friend void ::protobuf_network_2eproto::InitDefaultsUnfollowReplyImpl();
@@ -674,10 +689,33 @@ class ListReply : public ::google::protobuf::Message /* @@protoc_insertion_point
 
   // accessors -------------------------------------------------------
 
+  // repeated string names = 1;
+  int names_size() const;
+  void clear_names();
+  static const int kNamesFieldNumber = 1;
+  const ::std::string& names(int index) const;
+  ::std::string* mutable_names(int index);
+  void set_names(int index, const ::std::string& value);
+  #if LANG_CXX11
+  void set_names(int index, ::std::string&& value);
+  #endif
+  void set_names(int index, const char* value);
+  void set_names(int index, const char* value, size_t size);
+  ::std::string* add_names();
+  void add_names(const ::std::string& value);
+  #if LANG_CXX11
+  void add_names(::std::string&& value);
+  #endif
+  void add_names(const char* value);
+  void add_names(const char* value, size_t size);
+  const ::google::protobuf::RepeatedPtrField< ::std::string>& names() const;
+  ::google::protobuf::RepeatedPtrField< ::std::string>* mutable_names();
+
   // @@protoc_insertion_point(class_scope:network.ListReply)
  private:
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
+  ::google::protobuf::RepeatedPtrField< ::std::string> names_;
   mutable int _cached_size_;
   friend struct ::protobuf_network_2eproto::TableStruct;
   friend void ::protobuf_network_2eproto::InitDefaultsListReplyImpl();
@@ -864,6 +902,59 @@ inline void UnfollowRequest::set_allocated_name(::std::string* name) {
 
 // UnfollowReply
 
+// string name = 1;
+inline void UnfollowReply::clear_name() {
+  name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& UnfollowReply::name() const {
+  // @@protoc_insertion_point(field_get:network.UnfollowReply.name)
+  return name_.GetNoArena();
+}
+inline void UnfollowReply::set_name(const ::std::string& value) {
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:network.UnfollowReply.name)
+}
+#if LANG_CXX11
+inline void UnfollowReply::set_name(::std::string&& value) {
+  
+  name_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:network.UnfollowReply.name)
+}
+#endif
+inline void UnfollowReply::set_name(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:network.UnfollowReply.name)
+}
+inline void UnfollowReply::set_name(const char* value, size_t size) {
+  
+  name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:network.UnfollowReply.name)
+}
+inline ::std::string* UnfollowReply::mutable_name() {
+  
+  // @@protoc_insertion_point(field_mutable:network.UnfollowReply.name)
+  return name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* UnfollowReply::release_name() {
+  // @@protoc_insertion_point(field_release:network.UnfollowReply.name)
+  
+  return name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void UnfollowReply::set_allocated_name(::std::string* name) {
+  if (name != NULL) {
+    
+  } else {
+    
+  }
+  name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), name);
+  // @@protoc_insertion_point(field_set_allocated:network.UnfollowReply.name)
+}
+
 // -------------------------------------------------------------------
 
 // ListRequest
@@ -871,6 +962,75 @@ inline void UnfollowRequest::set_allocated_name(::std::string* name) {
 // -------------------------------------------------------------------
 
 // ListReply
+
+// repeated string names = 1;
+inline int ListReply::names_size() const {
+  return names_.size();
+}
+inline void ListReply::clear_names() {
+  names_.Clear();
+}
+inline const ::std::string& ListReply::names(int index) const {
+  // @@protoc_insertion_point(field_get:network.ListReply.names)
+  return names_.Get(index);
+}
+inline ::std::string* ListReply::mutable_names(int index) {
+  // @@protoc_insertion_point(field_mutable:network.ListReply.names)
+  return names_.Mutable(index);
+}
+inline void ListReply::set_names(int index, const ::std::string& value) {
+  // @@protoc_insertion_point(field_set:network.ListReply.names)
+  names_.Mutable(index)->assign(value);
+}
+#if LANG_CXX11
+inline void ListReply::set_names(int index, ::std::string&& value) {
+  // @@protoc_insertion_point(field_set:network.ListReply.names)
+  names_.Mutable(index)->assign(std::move(value));
+}
+#endif
+inline void ListReply::set_names(int index, const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  names_.Mutable(index)->assign(value);
+  // @@protoc_insertion_point(field_set_char:network.ListReply.names)
+}
+inline void ListReply::set_names(int index, const char* value, size_t size) {
+  names_.Mutable(index)->assign(
+    reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_set_pointer:network.ListReply.names)
+}
+inline ::std::string* ListReply::add_names() {
+  // @@protoc_insertion_point(field_add_mutable:network.ListReply.names)
+  return names_.Add();
+}
+inline void ListReply::add_names(const ::std::string& value) {
+  names_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add:network.ListReply.names)
+}
+#if LANG_CXX11
+inline void ListReply::add_names(::std::string&& value) {
+  names_.Add(std::move(value));
+  // @@protoc_insertion_point(field_add:network.ListReply.names)
+}
+#endif
+inline void ListReply::add_names(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  names_.Add()->assign(value);
+  // @@protoc_insertion_point(field_add_char:network.ListReply.names)
+}
+inline void ListReply::add_names(const char* value, size_t size) {
+  names_.Add()->assign(reinterpret_cast<const char*>(value), size);
+  // @@protoc_insertion_point(field_add_pointer:network.ListReply.names)
+}
+inline const ::google::protobuf::RepeatedPtrField< ::std::string>&
+ListReply::names() const {
+  // @@protoc_insertion_point(field_list:network.ListReply.names)
+  return names_;
+}
+inline ::google::protobuf::RepeatedPtrField< ::std::string>*
+ListReply::mutable_names() {
+  // @@protoc_insertion_point(field_mutable_list:network.ListReply.names)
+  return &names_;
+}
 
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
