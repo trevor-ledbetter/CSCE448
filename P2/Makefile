@@ -19,7 +19,6 @@ SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc`
 CXXFLAGS += -std=c++11
-CXXFLAGS += -g
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
            -lgrpc++_reflection\
@@ -38,12 +37,12 @@ PROTOS_PATH = protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check client.out server.out
+all: system-check client server
 
-client.out: network.pb.o network.grpc.pb.o client.o
+client: network.pb.o network.grpc.pb.o client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-server.out: network.pb.o network.grpc.pb.o server.o
+server: network.pb.o network.grpc.pb.o server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 .PRECIOUS: %.grpc.pb.cc

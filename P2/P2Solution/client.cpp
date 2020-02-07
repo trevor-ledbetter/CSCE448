@@ -32,15 +32,15 @@ class Client : public IClient
                const std::string& p)
             :hostname(hname), username(uname), port(p)
             {}
-        void set_stub(std::string address){
-            auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
-            stub_ = network::SNS::NewStub(channel);
-            //stub_ = std::move(stub);
-        }
     protected:
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
         virtual void processTimeline();
+
+        void set_stub(std::string address){
+            auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
+            stub_ = network::SNS::NewStub(channel);
+        }
     private:
         std::string hostname;
         std::string username;

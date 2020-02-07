@@ -80,14 +80,15 @@ class SNSImpl final : public SNS::Service {
 
     Status Follow(ServerContext* context, const FollowRequest* request, FollowReply* reply) override {
         // Initialize IReplyValue to FAILURE_UNKNOWN by default
-        reply->set_ireplyvalue(5);
+        //reply->set_ireplyvalue(5);
+        reply->set_ireplyvalue(0);
 
         // Extract values from protocol buffer
         const string reqUser   = request->requestingclient();
         const string followReq = request->followrequest();
 
         // Find specified user, and add if not already in follow list
-        auto requester = UserDB.find(reqUser);
+        /*auto requester = UserDB.find(reqUser);
         if (requester != UserDB.end()) {
             auto& followVec = requester->second.following;
             auto followVecIt = find(followVec.begin(), followVec.end(), followReq);
@@ -103,7 +104,7 @@ class SNSImpl final : public SNS::Service {
         else {
             // Reply FAILURE_UNKNOWN
             return Status::CANCELLED;
-        }
+        }*/
         
         return Status::OK;
     }
