@@ -74,6 +74,7 @@ message UserData {
     string name = 1;
     Timeline user_timeline = 2;
     repeated string following = 3;
+    repeated string followers = 4;
 }
 
 message UserDataBase {

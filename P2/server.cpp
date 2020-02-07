@@ -48,8 +48,9 @@ class SNSImpl final : public SNS::Service {
             : name(name_) {}
 
         string name;
-        vector<string> following;
         vector<Post> timeline;
+        vector<string> following;
+        vector<string> followers;
     };
 
     unordered_map<string, User> UserDB;
