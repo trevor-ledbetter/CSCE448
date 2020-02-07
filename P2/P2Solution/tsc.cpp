@@ -2,25 +2,15 @@
 //#include <memory>
 //#include <thread>
 //#include <vector>
-#include <ctime>
 #include <string>
 #include <unistd.h>
 #include <grpc++/grpc++.h>
 #include "client.h"
 #include "network.grpc.pb.h"
-#include <google/protobuf/util/time_util.h>
-
 using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-using network::SNS;
-using network::FollowRequest;
-using network::FollowReply;
-using network::UnfollowRequest;
-using network::UnfollowReply;
-using network::ListRequest;
-using network::ListReply;
+using network::SNL;
 
+using namespace std;
 
 class Client : public IClient
 {
@@ -30,11 +20,6 @@ class Client : public IClient
                const std::string& p)
             :hostname(hname), username(uname), port(p)
             {}
-        void set_stub(std::string address){
-            auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
-            stub_ = network::SNS::NewStub(channel);
-            //stub_ = std::move(stub);
-        }
     protected:
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
@@ -47,14 +32,14 @@ class Client : public IClient
         // You can have an instance of the client stub
         // as a member variable.
         //std::unique_ptr<NameOfYourStubClass::Stub> stub_;
-        std::unique_ptr<SNS::Stub> stub_;
+        std::unique_ptr<network::Stub> stub_;
 };
 
 int main(int argc, char** argv) {
 
     std::string hostname = "localhost";
     std::string username = "default";
-    std::string port = "5116";
+    std::string port = "3010";
     int opt = 0;
     while ((opt = getopt(argc, argv, "h:u:p:")) != -1){
         switch(opt) {
@@ -87,9 +72,12 @@ int Client::connectTo()
     // a member variable in your own Client class.
     // Please refer to gRpc tutorial how to create a stub.
 	// ------------------------------------------------------------
-    
-    std::string address = this->hostname + ":" + this->port;
-    set_stub(address); //sets Client's stub with a channel created with address
+    string address = Client.hostname + ":" + Client.username;
+    auto channel = CreateChannel(address, InsecureChannelCredentials());
+    auto stub = network::SNL::NewStub(channel);
+    /*
+    Set the client's stub to the one i made using a set_stub function i need to make
+    */
     return 1; // return 1 if success, otherwise return -1
 }
 
@@ -141,97 +129,8 @@ IReply Client::processCommand(std::string& input)
     // "following_users" member variable of IReply.
 	// ------------------------------------------------------------
     
-    //maybe need to do some more error checking??
-    std::size_t index = input.find_first_of(" ");
-    std::string cmd = input.substr(0, index);\
-    std::string argument = input.substr(index+1, (input.length()-index));
-
-    IReply reply;
-    ClientContext clientCtxt;
-    if(cmd == "FOLLOW"){
-        FollowRequest followReq;
-        followReq.set_name(argument);
-        
-        FollowReply followRep;
-        reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
-        if (reply.grpc_status.ok()) {
-            switch(followRep.ireplyvalue()){
-            case 0:
-                reply.comm_status = SUCCESS;
-                break;
-            case 1:
-                reply.comm_status = FAILURE_ALREADY_EXISTS;
-                break;
-            case 2:
-                reply.comm_status = FAILURE_NOT_EXISTS;
-                break;
-            case 3:
-                reply.comm_status = FAILURE_INVALID_USERNAME;
-                break;
-            case 4:
-                reply.comm_status = FAILURE_INVALID;
-                break;
-            case 5:
-                reply.comm_status = FAILURE_UNKNOWN;
-                break;
-            }
-        }
-        else {
-            reply.comm_status = FAILURE_UNKNOWN;
-        }
-
-    }else if(cmd == "UNFOLLOW"){
-        UnfollowRequest unfollowReq;
-        unfollowReq.set_name(argument);
-        UnfollowReply unfollowRep;
-        ClientContext context;
-        reply.grpc_status = stub_->Unfollow(&context, unfollowReq, &unfollowRep);
-        if (reply.grpc_status.ok()) {
-            switch(unfollowRep.ireplyvalue()){
-                case 0:
-                    reply.comm_status = SUCCESS;
-                    break;
-                case 1:
-                    reply.comm_status = FAILURE_ALREADY_EXISTS;
-                    break;
-                case 2:
-                    reply.comm_status = FAILURE_NOT_EXISTS;
-                    break;
-                case 3:
-                    reply.comm_status = FAILURE_INVALID_USERNAME;
-                    break;
-                case 4:
-                    reply.comm_status = FAILURE_INVALID;
-                    break;
-                case 5:
-                    reply.comm_status = FAILURE_UNKNOWN;
-                    break;
-            }
-        }
-        else {
-            reply.comm_status = FAILURE_UNKNOWN;
-        }
-
-    }else if(cmd == "LIST"){
-        ListRequest listReq;
-        ListReply listRep;
-        
-    }else if(cmd == "TIMELINE"){
-
-    }else if(cmd == "DEBUG"){
-        network::DebugRequest dbgReq;
-        google::protobuf::Timestamp tStamp = google::protobuf::util::TimeUtil::GetCurrentTime();
-        *dbgReq.mutable_timein() = tStamp;
-        network::DebugReply dbgRep;
-        std::cout << "Sending at time: " << google::protobuf::util::TimeUtil::ToString(tStamp) << std::endl;
-        reply.grpc_status = stub_->ExecDebug(&clientCtxt, dbgReq, &dbgRep);
-        std::cout << "Receive at time: " << google::protobuf::util::TimeUtil::ToString(dbgRep.timeout()) << std::endl;
-
-    }else{
-        std::cout << "Invalid Command\n";
-    }
-
-    return reply;
+    IReply ire;
+    return ire;
 }
 
 void Client::processTimeline()

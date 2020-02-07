@@ -18,8 +18,8 @@ service SNS{
     rpc Follow (FollowRequest) returns (FollowReply) {}
     rpc Unfollow (UnfollowRequest) returns (UnfollowReply) {}
     rpc List (ListRequest) returns (ListReply) {}
-    rpc Timeline (TimelineRequest) return (TimelineReply) {} 
-}
+    rpc ExecDebug (DebugRequest) returns (DebugReply) {}
+} //end SNS
 
 
 message FollowRequest{
@@ -28,7 +28,6 @@ message FollowRequest{
 }
 
 message FollowReply{
-    //Result of the follow request
     int32 IReplyValue = 1;
 }
 
@@ -38,7 +37,6 @@ message UnfollowRequest{
 }
 
 message UnfollowReply{
-    //Result of the unfollow request
     int32 IReplyValue = 1;
 }
 
