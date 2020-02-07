@@ -119,6 +119,13 @@ class SNSImpl final : public SNS::Service {
 
         return Status::OK;
     }
+    
+    Status List(ServerContext* context, const UnfollowRequest* request, UnfollowReply* reply) override {
+        reply->set_ireplyvalue(0);
+
+        return Status::OK;
+    }
+
 
     Status ExecDebug(ServerContext* context, const DebugRequest* debug, DebugReply* dbgrep) override {
         using namespace google::protobuf;
