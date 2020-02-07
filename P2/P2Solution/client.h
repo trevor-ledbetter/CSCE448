@@ -33,7 +33,7 @@ enum IStatus
  * ireply.grpc_status = return value of a service method
  * ireply.comm_status = one of values in IStatus enum
  * reply.users = list of all users who connected to the server at least onece
- * reply.following_users = list of users who current who current user are following;
+ * reply.followers = list of users who following current user;
  *
  * This structure is not for communicating between server and client.
  * You need to design your own rules for the communication.
@@ -43,7 +43,7 @@ struct IReply
     grpc::Status grpc_status;
     enum IStatus comm_status;
     std::vector<std::string> all_users;
-    std::vector<std::string> following_users;
+    std::vector<std::string> followers;
 };
 
 class IClient
@@ -139,8 +139,8 @@ void IClient::displayCommandReply(const std::string& comm, const IReply& reply) 
                     for (std::string room : reply.all_users) {
                         std::cout << room << ", ";
                     }
-					std::cout << "\nFollowing users: ";
-                    for (std::string room : reply.following_users) {
+					std::cout << "\nFollowers: ";
+                    for (std::string room : reply.followers) {
                         std::cout << room << ", ";
                     }
                     std::cout << std::endl;
