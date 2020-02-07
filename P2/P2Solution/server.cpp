@@ -90,8 +90,8 @@ class SNSImpl final : public SNS::Service {
         // Check request in database
         auto dbIt = UserDB.find(followReq);
         if (dbIt == UserDB.end()) {
-            // Reply FAILURE_ALREADY_EXISTS
-            reply->set_ireplyvalue(1);
+            // Reply FAILURE_NOT_EXISTS
+            reply->set_ireplyvalue(2);
             return Status::OK;
         }
 
