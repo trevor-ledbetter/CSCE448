@@ -93,11 +93,41 @@ int Client::connectTo()
     std::string address = this->hostname + ":" + this->port;
     set_stub(address); //sets Client's stub with a channel created with address
     
+    ClientContext clientCtx;
     ClientConnect connectionReq;
     ServerAllow serverResponse;
     IReply replyStatus;
 
-    return 1; // return 1 if success, otherwise return -1
+    connectionReq.set_connectingclient(username);
+    replyStatus.grpc_status = stub_->InitConnect(&clientCtx, connectionReq, &serverResponse);
+    if (replyStatus.grpc_status.ok()) {
+        switch (serverResponse.ireplyvalue()) {
+        case 0:
+            replyStatus.comm_status = SUCCESS;
+            break;
+        case 1:
+            replyStatus.comm_status = FAILURE_ALREADY_EXISTS;
+            break;
+        case 2:
+            replyStatus.comm_status = FAILURE_NOT_EXISTS;
+            break;
+        case 3:
+            replyStatus.comm_status = FAILURE_INVALID_USERNAME;
+            break;
+        case 4:
+            replyStatus.comm_status = FAILURE_INVALID;
+            break;
+        case 5:
+            replyStatus.comm_status = FAILURE_UNKNOWN;
+            break;
+        }
+    }
+    else {
+        replyStatus.comm_status = FAILURE_UNKNOWN;
+    }
+
+    if (replyStatus.comm_status == SUCCESS) return 1;
+    else return -1; // return 1 if success, otherwise return -1
 }
 
 IReply Client::processCommand(std::string& input)
