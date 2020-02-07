@@ -87,6 +87,12 @@ class SNSImpl final : public SNS::Service {
         const string followReq = request->followrequest();
 
         // Find specified user, and add if not already in follow list
+        // Check not self
+        if (followReq == reqUser) {
+            reply->set_ireplyvalue(4);
+            return Status::OK;
+        }
+
         // Check request in database
         auto dbIt = UserDB.find(followReq);
         if (dbIt == UserDB.end()) {

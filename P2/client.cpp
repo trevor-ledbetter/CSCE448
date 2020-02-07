@@ -189,7 +189,6 @@ IReply Client::processCommand(std::string& input)
         FollowRequest followReq;
         followReq.set_followrequest(argument);
         followReq.set_requestingclient(username);
-        
         FollowReply followRep;
         reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
         if (reply.grpc_status.ok()) {
