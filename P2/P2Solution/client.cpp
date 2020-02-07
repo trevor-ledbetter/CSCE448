@@ -150,7 +150,8 @@ IReply Client::processCommand(std::string& input)
     ClientContext clientCtxt;
     if(cmd == "FOLLOW"){
         FollowRequest followReq;
-        followReq.set_name(argument);
+        followReq.set_followrequest(argument);
+        followReq.set_requestingclient(username);
         
         FollowReply followRep;
         reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
@@ -182,10 +183,10 @@ IReply Client::processCommand(std::string& input)
 
     }else if(cmd == "UNFOLLOW"){
         UnfollowRequest unfollowReq;
-        unfollowReq.set_name(argument);
+        unfollowReq.set_unfollowrequest(argument);
+        unfollowReq.set_requestingclient(username);
         UnfollowReply unfollowRep;
-        ClientContext context;
-        reply.grpc_status = stub_->Unfollow(&context, unfollowReq, &unfollowRep);
+        reply.grpc_status = stub_->Unfollow(&clientCtxt, unfollowReq, &unfollowRep);
         if (reply.grpc_status.ok()) {
             switch(unfollowRep.ireplyvalue()){
                 case 0:
