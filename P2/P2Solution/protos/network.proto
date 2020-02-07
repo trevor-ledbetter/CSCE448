@@ -15,16 +15,25 @@ package network;
 import "google/protobuf/timestamp.proto";
 
 service SNS{
+    rpc InitConnect (ClientConnect) returns (ServerAllow) {}
     rpc Follow (FollowRequest) returns (FollowReply) {}
     rpc Unfollow (UnfollowRequest) returns (UnfollowReply) {}
     rpc List (ListRequest) returns (ListReply) {}
     rpc ExecDebug (DebugRequest) returns (DebugReply) {}
 } //end SNS
 
+message ClientConnect {
+    string connectingClient = 1;
+}
+
+message ServerAllow {
+    int32 IReplyValue = 1;
+}
 
 message FollowRequest{
     // Client specifies name to follow
-    string name = 1;
+    string requestingClient = 1;
+    string followRequest = 2;
 }
 
 message FollowReply{
@@ -33,7 +42,8 @@ message FollowReply{
 
 message UnfollowRequest{
     // Client specifies name to unfollow
-    string name = 1;
+    string requestingClient = 1;
+    string unfollowRequest = 2;
 }
 
 message UnfollowReply{
