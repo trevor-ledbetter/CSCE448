@@ -68,11 +68,11 @@ class SNSImpl final : public SNS::Service {
         if (connector == UserDB.end()) {
             UserDB.insert({ clientName, User(clientName) });
             cout << "Adding user:\t" << clientName << endl;
-            response->set_ireplyvalue(1);
+            response->set_ireplyvalue(0);
         }
         else {
             cout << "Not adding duplicate user:\t" << clientName << endl;
-            response->set_ireplyvalue(2);
+            response->set_ireplyvalue(0);
         }
 
         return Status::OK;
@@ -88,25 +88,30 @@ class SNSImpl final : public SNS::Service {
         const string followReq = request->followrequest();
 
         // Find specified user, and add if not already in follow list
-        /*auto requester = UserDB.find(reqUser);
-        if (requester != UserDB.end()) {
-            auto& followVec = requester->second.following;
-            auto followVecIt = find(followVec.begin(), followVec.end(), followReq);
-            if (followVecIt == followVec.end()) {
-                followVec.push_back(followReq);
-                reply->set_ireplyvalue(1);
-            }
-            else {
-                // Reply FAILURE_ALREADY_EXISTS
-                reply->set_ireplyvalue(2);
-            }
+        // Check request in database
+        auto dbIt = UserDB.find(followReq);
+        if (dbIt == UserDB.end()) {
+            // Reply FAILURE_ALREADY_EXISTS
+            reply->set_ireplyvalue(1);
+            return Status::OK;
+        }
+
+        // Check request in following list
+        auto& requester = UserDB.at(reqUser);
+        auto& followVec = requester.following;
+        auto followVecIt = find(followVec.begin(), followVec.end(), followReq);
+        if (followVecIt == followVec.end()) {
+            followVec.push_back(followReq);
+            reply->set_ireplyvalue(0);
+            return Status::OK;
         }
         else {
-            // Reply FAILURE_UNKNOWN
-            return Status::CANCELLED;
-        }*/
+            // Reply FAILURE_ALREADY_EXISTS
+            reply->set_ireplyvalue(1);
+            return Status::OK;
+        }
         
-        return Status::OK;
+        return Status::CANCELLED;
     }
 
     Status Unfollow(ServerContext* context, const UnfollowRequest* request, UnfollowReply* reply) override {
