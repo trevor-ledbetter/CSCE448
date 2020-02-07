@@ -114,9 +114,30 @@ class SNSImpl final : public SNS::Service {
     }
 
     Status Unfollow(ServerContext* context, const UnfollowRequest* request, UnfollowReply* reply) override {
-        reply->set_ireplyvalue(0);
+        // Initialize IReplyValue to FAILURE_UNKNOWN by default
+        reply->set_ireplyvalue(5);
 
-        return Status::OK;
+        // Extract values from protocol buffer
+        const string reqUser = request->requestingclient();
+        const string unfollowReq = request->unfollowrequest();
+
+        // Find specified user, and add if not already in follow list
+        // Check request in following list
+        auto& requester = UserDB.at(reqUser);
+        auto& followVec = requester.following;
+        auto followVecIt = find(followVec.begin(), followVec.end(), unfollowReq);
+        if (followVecIt != followVec.end()) {
+            followVec.erase(followVecIt);
+            reply->set_ireplyvalue(0);
+            return Status::OK;
+        }
+        else {
+            // Reply FAILURE_NOT_EXISTS
+            reply->set_ireplyvalue(2);
+            return Status::OK;
+        }
+
+        return Status::CANCELLED;
     }
 
     Status ExecDebug(ServerContext* context, const DebugRequest* debug, DebugReply* dbgrep) override {
