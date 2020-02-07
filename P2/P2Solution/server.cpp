@@ -67,6 +67,12 @@ class SNSImpl final : public SNS::Service {
         auto connector = UserDB.find(clientName);
         if (connector == UserDB.end()) {
             UserDB.insert({ clientName, User(clientName) });
+            cout << "Adding user:\t" << clientName << endl;
+            response->set_ireplyvalue(1);
+        }
+        else {
+            cout << "Not adding duplicate user:\t" << clientName << endl;
+            response->set_ireplyvalue(2);
         }
 
         return Status::OK;

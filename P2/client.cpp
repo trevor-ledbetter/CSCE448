@@ -14,6 +14,8 @@ using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
 using network::SNS;
+using network::ClientConnect;
+using network::ServerAllow;
 using network::FollowRequest;
 using network::FollowReply;
 using network::UnfollowRequest;
@@ -90,6 +92,11 @@ int Client::connectTo()
     
     std::string address = this->hostname + ":" + this->port;
     set_stub(address); //sets Client's stub with a channel created with address
+    
+    ClientConnect connectionReq;
+    ServerAllow serverResponse;
+    IReply replyStatus;
+
     return 1; // return 1 if success, otherwise return -1
 }
 
@@ -150,7 +157,8 @@ IReply Client::processCommand(std::string& input)
     ClientContext clientCtxt;
     if(cmd == "FOLLOW"){
         FollowRequest followReq;
-        followReq.set_name(argument);
+        followReq.set_followrequest(argument);
+        followReq.set_requestingclient(username);
         
         FollowReply followRep;
         reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
@@ -182,10 +190,10 @@ IReply Client::processCommand(std::string& input)
 
     }else if(cmd == "UNFOLLOW"){
         UnfollowRequest unfollowReq;
-        unfollowReq.set_name(argument);
+        unfollowReq.set_unfollowrequest(argument);
+        unfollowReq.set_requestingclient(username);
         UnfollowReply unfollowRep;
-        ClientContext context;
-        reply.grpc_status = stub_->Unfollow(&context, unfollowReq, &unfollowRep);
+        reply.grpc_status = stub_->Unfollow(&clientCtxt, unfollowReq, &unfollowRep);
         if (reply.grpc_status.ok()) {
             switch(unfollowRep.ireplyvalue()){
                 case 0:

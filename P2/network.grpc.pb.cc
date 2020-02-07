@@ -16,9 +16,11 @@
 namespace network {
 
 static const char* SNS_method_names[] = {
+  "/network.SNS/InitConnect",
   "/network.SNS/Follow",
   "/network.SNS/Unfollow",
   "/network.SNS/List",
+  "/network.SNS/ExecDebug",
 };
 
 std::unique_ptr< SNS::Stub> SNS::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
@@ -27,10 +29,24 @@ std::unique_ptr< SNS::Stub> SNS::NewStub(const std::shared_ptr< ::grpc::ChannelI
 }
 
 SNS::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
-  : channel_(channel), rpcmethod_Follow_(SNS_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_Unfollow_(SNS_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_List_(SNS_method_names[2], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_InitConnect_(SNS_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Follow_(SNS_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_Unfollow_(SNS_method_names[2], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_List_(SNS_method_names[3], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_ExecDebug_(SNS_method_names[4], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
+
+::grpc::Status SNS::Stub::InitConnect(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::network::ServerAllow* response) {
+  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_InitConnect_, context, request, response);
+}
+
+::grpc::ClientAsyncResponseReader< ::network::ServerAllow>* SNS::Stub::AsyncInitConnectRaw(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::ServerAllow>::Create(channel_.get(), cq, rpcmethod_InitConnect_, context, request, true);
+}
+
+::grpc::ClientAsyncResponseReader< ::network::ServerAllow>* SNS::Stub::PrepareAsyncInitConnectRaw(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::ServerAllow>::Create(channel_.get(), cq, rpcmethod_InitConnect_, context, request, false);
+}
 
 ::grpc::Status SNS::Stub::Follow(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::network::FollowReply* response) {
   return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_Follow_, context, request, response);
@@ -44,15 +60,15 @@ SNS::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::FollowReply>::Create(channel_.get(), cq, rpcmethod_Follow_, context, request, false);
 }
 
-::grpc::Status SNS::Stub::Unfollow(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::network::UnfollowReply* response) {
+::grpc::Status SNS::Stub::Unfollow(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::network::UnfollowReply* response) {
   return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_Unfollow_, context, request, response);
 }
 
-::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* SNS::Stub::AsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* SNS::Stub::AsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::UnfollowReply>::Create(channel_.get(), cq, rpcmethod_Unfollow_, context, request, true);
 }
 
-::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* SNS::Stub::PrepareAsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* SNS::Stub::PrepareAsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::UnfollowReply>::Create(channel_.get(), cq, rpcmethod_Unfollow_, context, request, false);
 }
 
@@ -68,25 +84,54 @@ SNS::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::ListReply>::Create(channel_.get(), cq, rpcmethod_List_, context, request, false);
 }
 
+::grpc::Status SNS::Stub::ExecDebug(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::network::DebugReply* response) {
+  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_ExecDebug_, context, request, response);
+}
+
+::grpc::ClientAsyncResponseReader< ::network::DebugReply>* SNS::Stub::AsyncExecDebugRaw(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::DebugReply>::Create(channel_.get(), cq, rpcmethod_ExecDebug_, context, request, true);
+}
+
+::grpc::ClientAsyncResponseReader< ::network::DebugReply>* SNS::Stub::PrepareAsyncExecDebugRaw(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+  return ::grpc::internal::ClientAsyncResponseReaderFactory< ::network::DebugReply>::Create(channel_.get(), cq, rpcmethod_ExecDebug_, context, request, false);
+}
+
 SNS::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SNS_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< SNS::Service, ::network::FollowRequest, ::network::FollowReply>(
-          std::mem_fn(&SNS::Service::Follow), this)));
+      new ::grpc::internal::RpcMethodHandler< SNS::Service, ::network::ClientConnect, ::network::ServerAllow>(
+          std::mem_fn(&SNS::Service::InitConnect), this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SNS_method_names[1],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< SNS::Service, ::network::UnfollowReply, ::network::UnfollowReply>(
-          std::mem_fn(&SNS::Service::Unfollow), this)));
+      new ::grpc::internal::RpcMethodHandler< SNS::Service, ::network::FollowRequest, ::network::FollowReply>(
+          std::mem_fn(&SNS::Service::Follow), this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       SNS_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< SNS::Service, ::network::UnfollowRequest, ::network::UnfollowReply>(
+          std::mem_fn(&SNS::Service::Unfollow), this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      SNS_method_names[3],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< SNS::Service, ::network::ListRequest, ::network::ListReply>(
           std::mem_fn(&SNS::Service::List), this)));
+  AddMethod(new ::grpc::internal::RpcServiceMethod(
+      SNS_method_names[4],
+      ::grpc::internal::RpcMethod::NORMAL_RPC,
+      new ::grpc::internal::RpcMethodHandler< SNS::Service, ::network::DebugRequest, ::network::DebugReply>(
+          std::mem_fn(&SNS::Service::ExecDebug), this)));
 }
 
 SNS::Service::~Service() {
+}
+
+::grpc::Status SNS::Service::InitConnect(::grpc::ServerContext* context, const ::network::ClientConnect* request, ::network::ServerAllow* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
 ::grpc::Status SNS::Service::Follow(::grpc::ServerContext* context, const ::network::FollowRequest* request, ::network::FollowReply* response) {
@@ -96,7 +141,7 @@ SNS::Service::~Service() {
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status SNS::Service::Unfollow(::grpc::ServerContext* context, const ::network::UnfollowReply* request, ::network::UnfollowReply* response) {
+::grpc::Status SNS::Service::Unfollow(::grpc::ServerContext* context, const ::network::UnfollowRequest* request, ::network::UnfollowReply* response) {
   (void) context;
   (void) request;
   (void) response;
@@ -104,6 +149,13 @@ SNS::Service::~Service() {
 }
 
 ::grpc::Status SNS::Service::List(::grpc::ServerContext* context, const ::network::ListRequest* request, ::network::ListReply* response) {
+  (void) context;
+  (void) request;
+  (void) response;
+  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+}
+
+::grpc::Status SNS::Service::ExecDebug(::grpc::ServerContext* context, const ::network::DebugRequest* request, ::network::DebugReply* response) {
   (void) context;
   (void) request;
   (void) response;

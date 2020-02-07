@@ -37,6 +37,13 @@ class SNS final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
+    virtual ::grpc::Status InitConnect(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::network::ServerAllow* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::ServerAllow>> AsyncInitConnect(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::ServerAllow>>(AsyncInitConnectRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::ServerAllow>> PrepareAsyncInitConnect(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::ServerAllow>>(PrepareAsyncInitConnectRaw(context, request, cq));
+    }
     virtual ::grpc::Status Follow(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::network::FollowReply* response) = 0;
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::FollowReply>> AsyncFollow(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::FollowReply>>(AsyncFollowRaw(context, request, cq));
@@ -44,11 +51,11 @@ class SNS final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::FollowReply>> PrepareAsyncFollow(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::FollowReply>>(PrepareAsyncFollowRaw(context, request, cq));
     }
-    virtual ::grpc::Status Unfollow(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::network::UnfollowReply* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>> AsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) {
+    virtual ::grpc::Status Unfollow(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::network::UnfollowReply* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>> AsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>>(AsyncUnfollowRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>> PrepareAsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>> PrepareAsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>>(PrepareAsyncUnfollowRaw(context, request, cq));
     }
     virtual ::grpc::Status List(::grpc::ClientContext* context, const ::network::ListRequest& request, ::network::ListReply* response) = 0;
@@ -58,17 +65,35 @@ class SNS final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::ListReply>> PrepareAsyncList(::grpc::ClientContext* context, const ::network::ListRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::ListReply>>(PrepareAsyncListRaw(context, request, cq));
     }
+    virtual ::grpc::Status ExecDebug(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::network::DebugReply* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::DebugReply>> AsyncExecDebug(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::DebugReply>>(AsyncExecDebugRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::DebugReply>> PrepareAsyncExecDebug(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::network::DebugReply>>(PrepareAsyncExecDebugRaw(context, request, cq));
+    }
   private:
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::ServerAllow>* AsyncInitConnectRaw(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::ServerAllow>* PrepareAsyncInitConnectRaw(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::FollowReply>* AsyncFollowRaw(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::FollowReply>* PrepareAsyncFollowRaw(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>* AsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>* PrepareAsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>* AsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::UnfollowReply>* PrepareAsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::ListReply>* AsyncListRaw(::grpc::ClientContext* context, const ::network::ListRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::ListReply>* PrepareAsyncListRaw(::grpc::ClientContext* context, const ::network::ListRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::DebugReply>* AsyncExecDebugRaw(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::network::DebugReply>* PrepareAsyncExecDebugRaw(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
+    ::grpc::Status InitConnect(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::network::ServerAllow* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::ServerAllow>> AsyncInitConnect(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::ServerAllow>>(AsyncInitConnectRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::ServerAllow>> PrepareAsyncInitConnect(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::ServerAllow>>(PrepareAsyncInitConnectRaw(context, request, cq));
+    }
     ::grpc::Status Follow(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::network::FollowReply* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::FollowReply>> AsyncFollow(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::FollowReply>>(AsyncFollowRaw(context, request, cq));
@@ -76,11 +101,11 @@ class SNS final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::FollowReply>> PrepareAsyncFollow(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::FollowReply>>(PrepareAsyncFollowRaw(context, request, cq));
     }
-    ::grpc::Status Unfollow(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::network::UnfollowReply* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>> AsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) {
+    ::grpc::Status Unfollow(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::network::UnfollowReply* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>> AsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>>(AsyncUnfollowRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>> PrepareAsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>> PrepareAsyncUnfollow(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>>(PrepareAsyncUnfollowRaw(context, request, cq));
     }
     ::grpc::Status List(::grpc::ClientContext* context, const ::network::ListRequest& request, ::network::ListReply* response) override;
@@ -90,18 +115,31 @@ class SNS final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::ListReply>> PrepareAsyncList(::grpc::ClientContext* context, const ::network::ListRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::ListReply>>(PrepareAsyncListRaw(context, request, cq));
     }
+    ::grpc::Status ExecDebug(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::network::DebugReply* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::DebugReply>> AsyncExecDebug(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::DebugReply>>(AsyncExecDebugRaw(context, request, cq));
+    }
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::DebugReply>> PrepareAsyncExecDebug(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::network::DebugReply>>(PrepareAsyncExecDebugRaw(context, request, cq));
+    }
 
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
+    ::grpc::ClientAsyncResponseReader< ::network::ServerAllow>* AsyncInitConnectRaw(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::network::ServerAllow>* PrepareAsyncInitConnectRaw(::grpc::ClientContext* context, const ::network::ClientConnect& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::network::FollowReply>* AsyncFollowRaw(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::network::FollowReply>* PrepareAsyncFollowRaw(::grpc::ClientContext* context, const ::network::FollowRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* AsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* PrepareAsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowReply& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* AsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::network::UnfollowReply>* PrepareAsyncUnfollowRaw(::grpc::ClientContext* context, const ::network::UnfollowRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::network::ListReply>* AsyncListRaw(::grpc::ClientContext* context, const ::network::ListRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::network::ListReply>* PrepareAsyncListRaw(::grpc::ClientContext* context, const ::network::ListRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::network::DebugReply>* AsyncExecDebugRaw(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::network::DebugReply>* PrepareAsyncExecDebugRaw(::grpc::ClientContext* context, const ::network::DebugRequest& request, ::grpc::CompletionQueue* cq) override;
+    const ::grpc::internal::RpcMethod rpcmethod_InitConnect_;
     const ::grpc::internal::RpcMethod rpcmethod_Follow_;
     const ::grpc::internal::RpcMethod rpcmethod_Unfollow_;
     const ::grpc::internal::RpcMethod rpcmethod_List_;
+    const ::grpc::internal::RpcMethod rpcmethod_ExecDebug_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
 
@@ -109,9 +147,31 @@ class SNS final {
    public:
     Service();
     virtual ~Service();
+    virtual ::grpc::Status InitConnect(::grpc::ServerContext* context, const ::network::ClientConnect* request, ::network::ServerAllow* response);
     virtual ::grpc::Status Follow(::grpc::ServerContext* context, const ::network::FollowRequest* request, ::network::FollowReply* response);
-    virtual ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowReply* request, ::network::UnfollowReply* response);
+    virtual ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowRequest* request, ::network::UnfollowReply* response);
     virtual ::grpc::Status List(::grpc::ServerContext* context, const ::network::ListRequest* request, ::network::ListReply* response);
+    virtual ::grpc::Status ExecDebug(::grpc::ServerContext* context, const ::network::DebugRequest* request, ::network::DebugReply* response);
+  };
+  template <class BaseClass>
+  class WithAsyncMethod_InitConnect : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithAsyncMethod_InitConnect() {
+      ::grpc::Service::MarkMethodAsync(0);
+    }
+    ~WithAsyncMethod_InitConnect() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status InitConnect(::grpc::ServerContext* context, const ::network::ClientConnect* request, ::network::ServerAllow* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestInitConnect(::grpc::ServerContext* context, ::network::ClientConnect* request, ::grpc::ServerAsyncResponseWriter< ::network::ServerAllow>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+    }
   };
   template <class BaseClass>
   class WithAsyncMethod_Follow : public BaseClass {
@@ -119,7 +179,7 @@ class SNS final {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_Follow() {
-      ::grpc::Service::MarkMethodAsync(0);
+      ::grpc::Service::MarkMethodAsync(1);
     }
     ~WithAsyncMethod_Follow() override {
       BaseClassMustBeDerivedFromService(this);
@@ -130,7 +190,7 @@ class SNS final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestFollow(::grpc::ServerContext* context, ::network::FollowRequest* request, ::grpc::ServerAsyncResponseWriter< ::network::FollowReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -139,18 +199,18 @@ class SNS final {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_Unfollow() {
-      ::grpc::Service::MarkMethodAsync(1);
+      ::grpc::Service::MarkMethodAsync(2);
     }
     ~WithAsyncMethod_Unfollow() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowReply* request, ::network::UnfollowReply* response) final override {
+    ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowRequest* request, ::network::UnfollowReply* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestUnfollow(::grpc::ServerContext* context, ::network::UnfollowReply* request, ::grpc::ServerAsyncResponseWriter< ::network::UnfollowReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+    void RequestUnfollow(::grpc::ServerContext* context, ::network::UnfollowRequest* request, ::grpc::ServerAsyncResponseWriter< ::network::UnfollowReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
   template <class BaseClass>
@@ -159,7 +219,7 @@ class SNS final {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithAsyncMethod_List() {
-      ::grpc::Service::MarkMethodAsync(2);
+      ::grpc::Service::MarkMethodAsync(3);
     }
     ~WithAsyncMethod_List() override {
       BaseClassMustBeDerivedFromService(this);
@@ -170,17 +230,54 @@ class SNS final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestList(::grpc::ServerContext* context, ::network::ListRequest* request, ::grpc::ServerAsyncResponseWriter< ::network::ListReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_Follow<WithAsyncMethod_Unfollow<WithAsyncMethod_List<Service > > > AsyncService;
+  template <class BaseClass>
+  class WithAsyncMethod_ExecDebug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithAsyncMethod_ExecDebug() {
+      ::grpc::Service::MarkMethodAsync(4);
+    }
+    ~WithAsyncMethod_ExecDebug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ExecDebug(::grpc::ServerContext* context, const ::network::DebugRequest* request, ::network::DebugReply* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    void RequestExecDebug(::grpc::ServerContext* context, ::network::DebugRequest* request, ::grpc::ServerAsyncResponseWriter< ::network::DebugReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+      ::grpc::Service::RequestAsyncUnary(4, context, request, response, new_call_cq, notification_cq, tag);
+    }
+  };
+  typedef WithAsyncMethod_InitConnect<WithAsyncMethod_Follow<WithAsyncMethod_Unfollow<WithAsyncMethod_List<WithAsyncMethod_ExecDebug<Service > > > > > AsyncService;
+  template <class BaseClass>
+  class WithGenericMethod_InitConnect : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithGenericMethod_InitConnect() {
+      ::grpc::Service::MarkMethodGeneric(0);
+    }
+    ~WithGenericMethod_InitConnect() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status InitConnect(::grpc::ServerContext* context, const ::network::ClientConnect* request, ::network::ServerAllow* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
   template <class BaseClass>
   class WithGenericMethod_Follow : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_Follow() {
-      ::grpc::Service::MarkMethodGeneric(0);
+      ::grpc::Service::MarkMethodGeneric(1);
     }
     ~WithGenericMethod_Follow() override {
       BaseClassMustBeDerivedFromService(this);
@@ -197,13 +294,13 @@ class SNS final {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_Unfollow() {
-      ::grpc::Service::MarkMethodGeneric(1);
+      ::grpc::Service::MarkMethodGeneric(2);
     }
     ~WithGenericMethod_Unfollow() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowReply* request, ::network::UnfollowReply* response) final override {
+    ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowRequest* request, ::network::UnfollowReply* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -214,7 +311,7 @@ class SNS final {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithGenericMethod_List() {
-      ::grpc::Service::MarkMethodGeneric(2);
+      ::grpc::Service::MarkMethodGeneric(3);
     }
     ~WithGenericMethod_List() override {
       BaseClassMustBeDerivedFromService(this);
@@ -226,12 +323,49 @@ class SNS final {
     }
   };
   template <class BaseClass>
+  class WithGenericMethod_ExecDebug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithGenericMethod_ExecDebug() {
+      ::grpc::Service::MarkMethodGeneric(4);
+    }
+    ~WithGenericMethod_ExecDebug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable synchronous version of this method
+    ::grpc::Status ExecDebug(::grpc::ServerContext* context, const ::network::DebugRequest* request, ::network::DebugReply* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+  };
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_InitConnect : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithStreamedUnaryMethod_InitConnect() {
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler< ::network::ClientConnect, ::network::ServerAllow>(std::bind(&WithStreamedUnaryMethod_InitConnect<BaseClass>::StreamedInitConnect, this, std::placeholders::_1, std::placeholders::_2)));
+    }
+    ~WithStreamedUnaryMethod_InitConnect() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status InitConnect(::grpc::ServerContext* context, const ::network::ClientConnect* request, ::network::ServerAllow* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedInitConnect(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::network::ClientConnect,::network::ServerAllow>* server_unary_streamer) = 0;
+  };
+  template <class BaseClass>
   class WithStreamedUnaryMethod_Follow : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithStreamedUnaryMethod_Follow() {
-      ::grpc::Service::MarkMethodStreamed(0,
+      ::grpc::Service::MarkMethodStreamed(1,
         new ::grpc::internal::StreamedUnaryHandler< ::network::FollowRequest, ::network::FollowReply>(std::bind(&WithStreamedUnaryMethod_Follow<BaseClass>::StreamedFollow, this, std::placeholders::_1, std::placeholders::_2)));
     }
     ~WithStreamedUnaryMethod_Follow() override {
@@ -251,19 +385,19 @@ class SNS final {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithStreamedUnaryMethod_Unfollow() {
-      ::grpc::Service::MarkMethodStreamed(1,
-        new ::grpc::internal::StreamedUnaryHandler< ::network::UnfollowReply, ::network::UnfollowReply>(std::bind(&WithStreamedUnaryMethod_Unfollow<BaseClass>::StreamedUnfollow, this, std::placeholders::_1, std::placeholders::_2)));
+      ::grpc::Service::MarkMethodStreamed(2,
+        new ::grpc::internal::StreamedUnaryHandler< ::network::UnfollowRequest, ::network::UnfollowReply>(std::bind(&WithStreamedUnaryMethod_Unfollow<BaseClass>::StreamedUnfollow, this, std::placeholders::_1, std::placeholders::_2)));
     }
     ~WithStreamedUnaryMethod_Unfollow() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowReply* request, ::network::UnfollowReply* response) final override {
+    ::grpc::Status Unfollow(::grpc::ServerContext* context, const ::network::UnfollowRequest* request, ::network::UnfollowReply* response) final override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedUnfollow(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::network::UnfollowReply,::network::UnfollowReply>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedUnfollow(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::network::UnfollowRequest,::network::UnfollowReply>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_List : public BaseClass {
@@ -271,7 +405,7 @@ class SNS final {
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
     WithStreamedUnaryMethod_List() {
-      ::grpc::Service::MarkMethodStreamed(2,
+      ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler< ::network::ListRequest, ::network::ListReply>(std::bind(&WithStreamedUnaryMethod_List<BaseClass>::StreamedList, this, std::placeholders::_1, std::placeholders::_2)));
     }
     ~WithStreamedUnaryMethod_List() override {
@@ -285,9 +419,29 @@ class SNS final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedList(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::network::ListRequest,::network::ListReply>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_Follow<WithStreamedUnaryMethod_Unfollow<WithStreamedUnaryMethod_List<Service > > > StreamedUnaryService;
+  template <class BaseClass>
+  class WithStreamedUnaryMethod_ExecDebug : public BaseClass {
+   private:
+    void BaseClassMustBeDerivedFromService(const Service *service) {}
+   public:
+    WithStreamedUnaryMethod_ExecDebug() {
+      ::grpc::Service::MarkMethodStreamed(4,
+        new ::grpc::internal::StreamedUnaryHandler< ::network::DebugRequest, ::network::DebugReply>(std::bind(&WithStreamedUnaryMethod_ExecDebug<BaseClass>::StreamedExecDebug, this, std::placeholders::_1, std::placeholders::_2)));
+    }
+    ~WithStreamedUnaryMethod_ExecDebug() override {
+      BaseClassMustBeDerivedFromService(this);
+    }
+    // disable regular version of this method
+    ::grpc::Status ExecDebug(::grpc::ServerContext* context, const ::network::DebugRequest* request, ::network::DebugReply* response) final override {
+      abort();
+      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
+    }
+    // replace default version of method with streamed unary
+    virtual ::grpc::Status StreamedExecDebug(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::network::DebugRequest,::network::DebugReply>* server_unary_streamer) = 0;
+  };
+  typedef WithStreamedUnaryMethod_InitConnect<WithStreamedUnaryMethod_Follow<WithStreamedUnaryMethod_Unfollow<WithStreamedUnaryMethod_List<WithStreamedUnaryMethod_ExecDebug<Service > > > > > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_Follow<WithStreamedUnaryMethod_Unfollow<WithStreamedUnaryMethod_List<Service > > > StreamedService;
+  typedef WithStreamedUnaryMethod_InitConnect<WithStreamedUnaryMethod_Follow<WithStreamedUnaryMethod_Unfollow<WithStreamedUnaryMethod_List<WithStreamedUnaryMethod_ExecDebug<Service > > > > > StreamedService;
 };
 
 }  // namespace network

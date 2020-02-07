@@ -5,6 +5,9 @@
 #include <chrono>
 #include <vector>
 #include <unordered_map>
+#include <algorithm>
+#include <functional>
+#include <queue>
 
 #include <unistd.h>
 #include <grpc++/grpc++.h>
@@ -18,6 +21,8 @@ using grpc::ServerContext;
 using grpc::Status;
 
 using network::SNS;
+using network::ClientConnect;
+using network::ServerAllow;
 using network::FollowRequest;
 using network::FollowReply;
 using network::UnfollowRequest;
@@ -26,7 +31,6 @@ using network::UnfollowRequest;
 using network::UnfollowReply;
 using network::DebugRequest;
 using network::DebugReply;
-// Not including message type includes because there are also server side implementations
 
 using namespace std;
 
@@ -40,6 +44,9 @@ class SNSImpl final : public SNS::Service {
     };
 
     struct User {
+        User(const string& name_)
+            : name(name_) {}
+
         string name;
         vector<string> following;
         vector<Post> timeline;
@@ -47,16 +54,63 @@ class SNSImpl final : public SNS::Service {
 
     unordered_map<string, User> UserDB;
 
+
     //// GRPC IMPLEMENTATION
 
+    Status InitConnect(ServerContext* context, const ClientConnect* connection, ServerAllow* response) override {
+        // Fail by default
+        response->set_ireplyvalue(5);
+
+        // Check if user already exists, if not, then add entry to database
+        const string clientName = connection->connectingclient();
+
+        auto connector = UserDB.find(clientName);
+        if (connector == UserDB.end()) {
+            UserDB.insert({ clientName, User(clientName) });
+            cout << "Adding user:\t" << clientName << endl;
+            response->set_ireplyvalue(1);
+        }
+        else {
+            cout << "Not adding duplicate user:\t" << clientName << endl;
+            response->set_ireplyvalue(2);
+        }
+
+        return Status::OK;
+    }
+
     Status Follow(ServerContext* context, const FollowRequest* request, FollowReply* reply) override {
-        reply->set_ireplyvalue(0);
+        // Initialize IReplyValue to FAILURE_UNKNOWN by default
+        reply->set_ireplyvalue(5);
+
+        // Extract values from protocol buffer
+        const string reqUser   = request->requestingclient();
+        const string followReq = request->followrequest();
+
+        // Find specified user, and add if not already in follow list
+        auto requester = UserDB.find(reqUser);
+        if (requester != UserDB.end()) {
+            auto& followVec = requester->second.following;
+            auto followVecIt = find(followVec.begin(), followVec.end(), followReq);
+            if (followVecIt == followVec.end()) {
+                followVec.push_back(followReq);
+                reply->set_ireplyvalue(1);
+            }
+            else {
+                // Reply FAILURE_ALREADY_EXISTS
+                reply->set_ireplyvalue(2);
+            }
+        }
+        else {
+            // Reply FAILURE_UNKNOWN
+            return Status::CANCELLED;
+        }
         
         return Status::OK;
     }
 
     Status Unfollow(ServerContext* context, const UnfollowRequest* request, UnfollowReply* reply) override {
         reply->set_ireplyvalue(0);
+
         return Status::OK;
     }
 
