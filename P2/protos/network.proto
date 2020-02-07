@@ -16,7 +16,8 @@ service SNS{
     rpc Follow (FollowRequest) returns (FollowReply) {}
     rpc Unfollow (UnfollowRequest) returns (UnfollowReply) {}
     rpc List (ListRequest) returns (ListReply) {}
-} //end SNS
+    rpc Timeline (TimelineRequest) return (TimelineReply) {} 
+}
 
 
 message FollowRequest{
@@ -25,6 +26,7 @@ message FollowRequest{
 }
 
 message FollowReply{
+    //Result of the follow request
     int32 IReplyValue = 1;
 }
 
@@ -34,6 +36,7 @@ message UnfollowRequest{
 }
 
 message UnfollowReply{
+    //Result of the unfollow request
     int32 IReplyValue = 1;
 }
 
@@ -44,5 +47,14 @@ message ListRequest{
 
 message ListReply{
     repeated string names = 1;
+}
+
+message TimelineRequest{
+    string name = 1;
+}
+
+message TimelineReply{
+    //Result of the timeline request
+    int32 IReplyValue = 1;
 }
 

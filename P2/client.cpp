@@ -216,6 +216,8 @@ IReply Client::processCommand(std::string& input)
         
     }else if(cmd == "TIMELINE"){
 
+        
+        processTimeline();
     }else{
         std::cout << "Invalid Command\n";
     }
