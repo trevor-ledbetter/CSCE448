@@ -264,7 +264,7 @@ IReply Client::processCommand(std::string& input)
             std::cout << "size is: " << size << std::endl;
             for(int i=0; i<size; i++){
                 auto user_name = listRep.users(i);
-                std::cout << user_name << std::endl;
+                //std::cout << user_name << std::endl;
                 reply.all_users.push_back(user_name);
             }
 
@@ -272,7 +272,7 @@ IReply Client::processCommand(std::string& input)
             std::cout << "size2 is: " << size2 << std::endl;
             for(int i=0; i<size2; i++){
                 auto follower_name = listRep.followers(i);
-                std::cout << follower_name << std::endl;
+                //std::cout << follower_name << std::endl;
                 reply.followers.push_back(follower_name);
             }
 

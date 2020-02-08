@@ -180,13 +180,12 @@ class SNSImpl final : public SNS::Service {
         //Find the DB entry that cooresponds to the requester's username
         std::string username = request->username();
         auto& requester = UserDB.at(username);
-        std::cout << "size according to requester: " << requester.followers.size() << std::endl;
 
         //Access this entry's followers list and copy the follower names to reply's list "followers"
         auto& followVec = requester.followers;
         for(auto it : followVec){
             std::string name = it;
-            reply->add_users(name);
+            reply->add_followers(name);
         }
         reply->set_ireplyvalue(0);
         return Status::OK;
