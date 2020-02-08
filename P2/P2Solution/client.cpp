@@ -251,7 +251,55 @@ IReply Client::processCommand(std::string& input)
 
     }else if(cmd == "LIST"){
         ListRequest listReq;
+        listReq.set_username(username);
         ListReply listRep;
+        reply.grpc_status = stub_->List(&clientCtxt, listReq, &listRep);
+        if (reply.grpc_status.ok()) {
+            //Copy names from the ListReply to the IReply, which is returned
+            //right now we are copying element by element but there might be a better way??
+            //Im not sure what listRep's users, is exactly but its not a vector
+            std::cout << "Type is: " << typeid(reply.all_users).name() << std::endl;
+
+            int size = listRep.users_size();
+            std::cout << "size is: " << size << std::endl;
+            for(int i=0; i<size; i++){
+                auto user_name = listRep.users(i);
+                std::cout << user_name << std::endl;
+                reply.all_users.push_back(user_name);
+            }
+
+            int size2 = listRep.followers_size();
+            std::cout << "size2 is: " << size2 << std::endl;
+            for(int i=0; i<size2; i++){
+                auto follower_name = listRep.followers(i);
+                std::cout << follower_name << std::endl;
+                reply.followers.push_back(follower_name);
+            }
+
+            switch(listRep.ireplyvalue()){
+            case 0:
+                reply.comm_status = SUCCESS;
+                break;
+            case 1:
+                reply.comm_status = FAILURE_ALREADY_EXISTS;
+                break;
+            case 2:
+                reply.comm_status = FAILURE_NOT_EXISTS;
+                break;
+            case 3:
+                reply.comm_status = FAILURE_INVALID_USERNAME;
+                break;
+            case 4:
+                reply.comm_status = FAILURE_INVALID;
+                break;
+            case 5:
+                reply.comm_status = FAILURE_UNKNOWN;
+                break;
+            }
+        }
+        else {
+            reply.comm_status = FAILURE_UNKNOWN;
+        }
         
     }else if(cmd == "TIMELINE"){
 

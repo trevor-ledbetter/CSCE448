@@ -52,11 +52,13 @@ message UnfollowReply{
 
 message ListRequest{
     // This can be empty
-    
+    string username = 1;
 }
 
 message ListReply{
-    repeated string names = 1;
+    int32 IReplyValue = 1;
+    repeated string users = 2;
+    repeated string followers = 3;
 }
 
 // Timeline View / Persistent Storage Message Types

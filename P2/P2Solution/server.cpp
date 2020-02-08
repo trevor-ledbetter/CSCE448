@@ -31,6 +31,8 @@ using network::UnfollowRequest;
 using network::UnfollowReply;
 using network::DebugRequest;
 using network::DebugReply;
+using network::ListReply;
+using network::ListRequest;
 
 using namespace std;
 
@@ -145,6 +147,31 @@ class SNSImpl final : public SNS::Service {
         }
 
         return Status::CANCELLED;
+    }
+
+    Status List(ServerContext* context, const ListRequest* request, ListReply* reply) override {
+        // Initialize IReplyValue to FAILURE_UNKNOWN by default
+        reply->set_ireplyvalue(5);
+
+        //Iterate over entire list of users and copy their names to reply's list "users"
+        for (auto it : UserDB){
+            std::string name = it.first;
+            reply->add_users(name);
+        }
+
+        //Find the DB entry that cooresponds to the requester's username
+        std::string username = request->username();
+        auto& requester = UserDB.at(username);
+        std::cout << "size according to requester: " << requester.followers.size() << std::endl;
+
+        //Access this entry's followers list and copy the follower names to reply's list "followers"
+        auto& followVec = requester.followers;
+        for(auto it : followVec){
+            std::string name = it;
+            reply->add_users(name);
+        }
+        reply->set_ireplyvalue(0);
+        return Status::OK;
     }
 
     Status ExecDebug(ServerContext* context, const DebugRequest* debug, DebugReply* dbgrep) override {
