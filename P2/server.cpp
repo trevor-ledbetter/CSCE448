@@ -108,7 +108,10 @@ class SNSImpl final : public SNS::Service {
         auto& followVec = requester.following;
         auto followVecIt = find(followVec.begin(), followVec.end(), followReq);
         if (followVecIt == followVec.end()) {
+            // Add to following list
             followVec.push_back(followReq);
+            // Add to other user's follower's list
+            dbIt->second.followers.push_back(reqUser);
             reply->set_ireplyvalue(0);
             return Status::OK;
         }
@@ -135,7 +138,22 @@ class SNSImpl final : public SNS::Service {
         auto& followVec = requester.following;
         auto followVecIt = find(followVec.begin(), followVec.end(), unfollowReq);
         if (followVecIt != followVec.end()) {
+            // Erase from following list
             followVec.erase(followVecIt);
+            
+            // Erase from other user's followers list
+            auto& otherFollowerVec = UserDB.at(unfollowReq).followers;
+            auto userInOtherVecIt = find(otherFollowerVec.begin(), otherFollowerVec.end(), reqUser);
+            if (userInOtherVecIt != otherFollowerVec.end()) {
+                otherFollowerVec.erase(userInOtherVecIt);
+            }
+            else {
+                // If the requesting user wasn't found in the other's followers list
+                // There is an inherent error in the database
+                reply->set_ireplyvalue(5);
+                return Status::CANCELLED;
+            }
+            
             reply->set_ireplyvalue(0);
             return Status::OK;
         }
