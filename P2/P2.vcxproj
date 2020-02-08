@@ -56,6 +56,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>Makefile</ConfigurationType>
+    <RemoteRootDir>/home/csce438/projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -82,7 +83,29 @@
   <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <RemoteBuildCommandLine>cd source &amp;&amp; make</RemoteBuildCommandLine>
+    <RemoteReBuildCommandLine>cd source &amp;&amp; make all</RemoteReBuildCommandLine>
+    <RemoteCleanCommandLine>cd source &amp;&amp; make clean</RemoteCleanCommandLine>
+    <RemoteBuildOutputs>source/network.pb.h;source/network.pb.cc;source/network.grpc.pb.h;source/network.grpc.pb.cc</RemoteBuildOutputs>
+    <RemoteProjectDir>$(RemoteRootDir)/$(ProjectName)</RemoteProjectDir>
+    <OutDir>$(ProjectDir)\source</OutDir>
+    <IncrementalBuild>true</IncrementalBuild>
+  </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="source\client.cpp" />
+    <ClCompile Include="source\network.grpc.pb.cc" />
+    <ClCompile Include="source\network.pb.cc" />
+    <ClCompile Include="source\server.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\client.h" />
+    <ClInclude Include="source\network.grpc.pb.h" />
+    <ClInclude Include="source\network.pb.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="source\Makefile" />
+    <None Include="source\protos\network.proto" />
   </ItemGroup>
   <ItemDefinitionGroup />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

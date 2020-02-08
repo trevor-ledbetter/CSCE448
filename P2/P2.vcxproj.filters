@@ -1,3 +1,44 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{2996d8a7-214f-428d-80f0-b0f96112d513}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol Buffer Files">
+      <UniqueIdentifier>{148b13b8-d06b-4b06-a0a5-408d9d06c48c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Precompiled Stubs">
+      <UniqueIdentifier>{0facc62b-c7d8-4464-8642-cb0a708e4bd5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="source\server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="source\network.grpc.pb.cc">
+      <Filter>Source Files\Precompiled Stubs</Filter>
+    </ClCompile>
+    <ClCompile Include="source\network.pb.cc">
+      <Filter>Source Files\Precompiled Stubs</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="source\client.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\network.grpc.pb.h">
+      <Filter>Source Files\Precompiled Stubs</Filter>
+    </ClInclude>
+    <ClInclude Include="source\network.pb.h">
+      <Filter>Source Files\Precompiled Stubs</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="source\protos\network.proto">
+      <Filter>Protocol Buffer Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>
