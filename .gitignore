@@ -469,3 +469,7 @@ MigrationBackup/
 ### Protocol Buffer Precompiled Stubs
 *.pb.cc
 *.pb.h
+
+### Executables
+server
+client
