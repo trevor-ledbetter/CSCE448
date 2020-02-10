@@ -45,6 +45,7 @@ class Client : public IClient
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
         virtual void processTimeline();
+        virtual IReply sendPost(const std::string& msg);
     private:
         std::string hostname;
         std::string username;
@@ -328,18 +329,7 @@ IReply Client::processCommand(std::string& input)
         }
 
     }else if (cmd == "SEND") {
-        Post post;
-        post.set_name(username);
-        post.set_content(argument);
-        *post.mutable_time() = google::protobuf::util::TimeUtil::GetCurrentTime();
-        PostReply postRep;
-        reply.grpc_status = stub_->SendPost(&clientCtxt, post, &postRep);
-        if (reply.grpc_status.ok()) {
-            reply.comm_status = SUCCESS;
-        }
-        else {
-            reply.comm_status = FAILURE_UNKNOWN;
-        }
+        sendPost(argument);
     }else{
         std::cout << "Invalid Command\n";
     }
@@ -365,4 +355,23 @@ void Client::processTimeline()
     // and you can terminate the client program by pressing
     // CTRL-C (SIGINT)
 	// ------------------------------------------------------------
+}
+
+IReply Client::sendPost(const std::string& msg)
+{
+    Post post;
+    post.set_name(username);
+    post.set_content(msg);
+    *post.mutable_time() = google::protobuf::util::TimeUtil::GetCurrentTime();
+    PostReply postRep;
+    IReply reply;
+    ClientContext clientCtxt;
+    reply.grpc_status = stub_->SendPost(&clientCtxt, post, &postRep);
+    if (reply.grpc_status.ok()) {
+        reply.comm_status = SUCCESS;
+    }
+    else {
+        reply.comm_status = FAILURE_UNKNOWN;
+    }
+    return reply;
 }
