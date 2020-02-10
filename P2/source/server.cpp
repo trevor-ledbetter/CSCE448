@@ -93,6 +93,7 @@ public:
                 user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
                 user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
                 user.timeline.resize(client.timeline_size());
+                std::cout << "timeline size: " << client.timeline_size() << std::endl;
                 for(int i=0; i<client.timeline_size(); i++){
                     struct Post p;
                     p.name = client.timeline(i).name();
@@ -179,7 +180,9 @@ private:
         
         // I used swap here since netPost isn't modified after this line, but if it is, you can probably use CopyFrom()
         instancedPost->Swap(&netPost);
-        
+        ofstream SenderOutput("clients/" + post.name + ".txt");
+        sender.SerializeToOstream(&SenderOutput);
+        SenderOutput.close();
         // If you feed in a value with Add() it needs to be an rvalue (tried looking at reference for it, but it's a little confusing)
         // Using std::move() still doesn't work though, and I can't figure out why, so this is just what works for now I guess
         
@@ -443,6 +446,7 @@ private:
         cout << "\t" << "Content: " << inPost.content << endl;
         // Add to correct user timeline and follower's timelines
         AddUserPost(inPost);
+        AddUserPostFile(inPost);
         //lkuhuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 
         postRep->set_ireplyvalue(0);
