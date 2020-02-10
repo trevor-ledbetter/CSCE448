@@ -52,12 +52,16 @@ public:
     static const int MAX_TIMELINE = 20;
 
 private:
+    /* Contains data relevant to posts
+     */
     struct Post {
         string name;
         time_t timestamp;
         string content;
     };
 
+    /* Contains data relevant to users/clients
+     */
     struct User {
         User(const string& name_)
             : name(name_), clientDataStale(-1) {}
@@ -69,6 +73,8 @@ private:
         vector<string> followers;
     };
 
+    /* Holds all users with key = username, value = User
+     */
     unordered_map<string, User> UserDB;
 
     /* Add post to user's and follower's timelines and flags their data as stale
@@ -102,6 +108,9 @@ private:
      *
      ****************************/
 
+    /* RPC called on client construction
+     * Handles adding users to database when detected as new 
+     */
     Status InitConnect(ServerContext* context, const ClientConnect* connection, ServerAllow* response) override {
         // Fail by default
         response->set_ireplyvalue(5);
@@ -123,6 +132,8 @@ private:
         return Status::OK;
     }
 
+    /* RPC called when client wants to follow a user
+     */
     Status Follow(ServerContext* context, const FollowRequest* request, FollowReply* reply) override {
         // Initialize IReplyValue to FAILURE_UNKNOWN by default
         reply->set_ireplyvalue(5);
@@ -171,6 +182,8 @@ private:
         return Status::CANCELLED;
     }
 
+    /* RPC called when client wants to unfollow a user
+     */
     Status Unfollow(ServerContext* context, const UnfollowRequest* request, UnfollowReply* reply) override {
         // Initialize IReplyValue to FAILURE_UNKNOWN by default
         reply->set_ireplyvalue(5);
@@ -215,6 +228,8 @@ private:
         return Status::CANCELLED;
     }
 
+    /* RPC called when client wants to get a list of all users currently in the database
+     */
     Status List(ServerContext* context, const ListRequest* request, ListReply* reply) override {
         // Initialize IReplyValue to FAILURE_UNKNOWN by default
         reply->set_ireplyvalue(5);
@@ -250,9 +265,7 @@ private:
         
     }
 
-    /* Handle client post sending
-     * Returns server Status
-     * Requires ServerContext*, network::Post* (NOT SNSImpl::Post), PostReply*
+    /* RPC called from client timeline mode when user wishes to post
      */
     Status SendPost(ServerContext* context, const network::Post* postReq, PostReply* postRep) override {
         using namespace google::protobuf;

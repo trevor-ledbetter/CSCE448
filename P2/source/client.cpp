@@ -45,7 +45,16 @@ class Client : public IClient
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
         virtual void processTimeline();
+        /**
+         * Posts to user and follower timeline on server
+         * @param msg Message to post
+         */
         virtual IReply sendPost(const std::string& msg);
+        /** 
+         Returns proper IStatus from RPC status id
+         * @param statusID RPC id number
+         */
+        virtual IStatus getStatus(const int statusID);
     private:
         std::string hostname;
         std::string username;
