@@ -1,6 +1,6 @@
 #include <iostream>
-//#include <memory>
-//#include <thread>
+#include <memory>
+#include <thread>
 //#include <vector>
 #include <ctime>
 #include <string>
@@ -22,6 +22,8 @@ using network::UnfollowRequest;
 using network::UnfollowReply;
 using network::ListRequest;
 using network::ListReply;
+using network::UpdateRequest;
+using network::UpdateReply;
 
 
 class Client : public IClient
@@ -50,6 +52,8 @@ class Client : public IClient
         // as a member variable.
         //std::unique_ptr<NameOfYourStubClass::Stub> stub_;
         std::unique_ptr<SNS::Stub> stub_;
+
+        std::thread chatUpdateThread;
 };
 
 int main(int argc, char** argv) {
@@ -304,13 +308,22 @@ IReply Client::processCommand(std::string& input)
     }else if(cmd == "TIMELINE"){
 
     }else if(cmd == "DEBUG"){
-        network::DebugRequest dbgReq;
-        google::protobuf::Timestamp tStamp = google::protobuf::util::TimeUtil::GetCurrentTime();
-        *dbgReq.mutable_timein() = tStamp;
-        network::DebugReply dbgRep;
-        std::cout << "Sending at time: " << google::protobuf::util::TimeUtil::ToString(tStamp) << std::endl;
-        reply.grpc_status = stub_->ExecDebug(&clientCtxt, dbgReq, &dbgRep);
-        std::cout << "Receive at time: " << google::protobuf::util::TimeUtil::ToString(dbgRep.timeout()) << std::endl;
+        UpdateRequest upReq;
+        upReq.set_username(username);
+        UpdateReply upRep;
+        reply.grpc_status = stub_->Update(&clientCtxt, upReq, &upRep);
+        if (reply.grpc_status.ok()) {
+            reply.comm_status = SUCCESS;
+        }
+        else {
+            reply.comm_status = FAILURE_UNKNOWN;
+        }
+        
+        if (reply.comm_status == SUCCESS && upRep.has_updated()) {
+            for (auto It = upRep.updated().posts().begin(); It != upRep.updated().posts().end(); It++) {
+                std::cout << It->content() << std::endl;
+            }
+        }
 
     }else{
         std::cout << "Invalid Command\n";

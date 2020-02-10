@@ -33,6 +33,9 @@ using network::DebugRequest;
 using network::DebugReply;
 using network::ListReply;
 using network::ListRequest;
+using network::UpdateRequest;
+using network::UpdateReply;
+using network::PostReply;
 
 using namespace std;
 
@@ -47,16 +50,21 @@ class SNSImpl final : public SNS::Service {
 
     struct User {
         User(const string& name_)
-            : name(name_) {}
+            : name(name_), clientDataStale(-1) {}
 
         string name;
-        vector<Post> timeline;
+        deque<Post> timeline;
+        int clientDataStale;
         vector<string> following;
         vector<string> followers;
     };
 
     unordered_map<string, User> UserDB;
 
+    // Add post to user's and follower's timelines and flags data as stale
+    void AddUserPost(const Post& post) {
+
+    }
 
     //// GRPC IMPLEMENTATION
 
@@ -192,6 +200,30 @@ class SNSImpl final : public SNS::Service {
         return Status::OK;
     }
 
+    Status Update(ServerContext* context, const UpdateRequest* request, UpdateReply* reply) override {
+        network::Post* testPost = reply->mutable_updated()->add_posts();
+        testPost->set_name("default");
+        *testPost->mutable_time() = google::protobuf::util::TimeUtil::GetCurrentTime();
+        testPost->set_content("testPost 1");
+
+        return Status::OK;
+        
+    }
+
+    // Handle client post sending
+    // Returns server Status
+    // Requires ServerContext*, network::Post* (NOT SNSImpl::Post), PostReply*
+    Status SendPost(ServerContext* context, const network::Post* postReq, PostReply* postRep) override {
+        using namespace google::protobuf;
+        // Put data into new SNSImpl::Post
+        Post inPost;
+        inPost.name = postReq->name();
+        inPost.timestamp = util::TimeUtil::TimestampToTimeT(postReq->time());
+        inPost.content = postReq->content();
+        // Add to correct user timeline and follower's timelines
+
+        return Status::OK;
+    }
 
     Status ExecDebug(ServerContext* context, const DebugRequest* debug, DebugReply* dbgrep) override {
         using namespace google::protobuf;
