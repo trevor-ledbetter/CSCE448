@@ -268,6 +268,10 @@ private:
         // Send necessary posts to the client
         User& requester = UserDB.at(request->username());
         int& quantity = requester.clientStaleDataCount;
+        // Make quantity the timeline size if initializing
+        if (quantity == -1) {
+            quantity = requester.timeline.size();
+        }
         for (auto postIt = requester.timeline.begin(); postIt < requester.timeline.begin() + quantity; postIt++) {
             network::Post* currPost = reply->mutable_updated()->add_posts();
             currPost->set_name(postIt->name);

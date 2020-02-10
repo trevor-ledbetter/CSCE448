@@ -36,11 +36,21 @@ class Client : public IClient
                const std::string& p)
             :hostname(hname), username(uname), port(p)
             {}
+        ~Client() {
+            if (chatUpdateThread.joinable()) {
+                chatUpdateThread.join();
+            }
+        }
         void set_stub(std::string address){
             auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
             stub_ = network::SNS::NewStub(channel);
             //stub_ = std::move(stub);
         }
+        
+        /**
+         * Amount of time to sleep update thread between update RPC calls
+         */
+        const static int UPDATE_SLEEP_MS = 500;
     protected:
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
@@ -55,7 +65,12 @@ class Client : public IClient
         /**
          * Requests updates to the timeline from the server and prints if any
          */
-        virtual void updatePosts();
+        virtual void checkForUpdate();
+
+        /**
+         * Calls checkForUpdate() at regular intervals and displays updates to the screen
+         */
+        virtual void updateTimeline();
 
         /** 
          Returns proper IStatus from RPC status id
@@ -249,7 +264,7 @@ IReply Client::processCommand(std::string& input)
         }
         
     }else if(cmd == "TIMELINE"){
-        
+        reply.comm_status = SUCCESS;
     }else if(cmd == "DEBUG"){
         UpdateRequest upReq;
         upReq.set_username(username);
@@ -271,7 +286,7 @@ IReply Client::processCommand(std::string& input)
     }else if (cmd == "SEND") {
         sendPost(argument);
     }else if (cmd == "UPDATE") {
-        updatePosts();
+        checkForUpdate();
     }else{
         std::cout << "Invalid Command\n";
     }
@@ -297,6 +312,22 @@ void Client::processTimeline()
     // and you can terminate the client program by pressing
     // CTRL-C (SIGINT)
 	// ------------------------------------------------------------
+
+    // Initial update check to get recent posts in timeline
+    checkForUpdate();
+
+    // Spawn update handler thread
+    chatUpdateThread = std::thread(&Client::updateTimeline, this);
+
+    // Get input from user continuously
+    while (true) {
+        const std::string& msg = getPostMessage();
+        const IReply reply = sendPost(msg);
+        if (reply.comm_status != SUCCESS) {
+            std::cerr << "Error posting message" << std::endl;
+
+        }
+    }
 }
 
 IReply Client::sendPost(const std::string& msg)
@@ -318,7 +349,7 @@ IReply Client::sendPost(const std::string& msg)
     return reply;
 }
 
-void Client::updatePosts()
+void Client::checkForUpdate()
 {
     UpdateRequest request;
     UpdateReply requestReply;
@@ -337,6 +368,16 @@ void Client::updatePosts()
     }
     else {
         std::cerr << "Error occurred receiving update" << std::endl;
+    }
+}
+
+void Client::updateTimeline()
+{
+    while (true) {
+        // Get an update
+        checkForUpdate();
+        // Sleep
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
