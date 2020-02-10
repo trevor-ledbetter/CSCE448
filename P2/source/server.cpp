@@ -95,7 +95,6 @@ public:
                 user.clientStaleDataCount = client.clientdatastale();
                 //std::cout << "timeline size: " << client.timeline_size() << std::endl;
                 for(int i=0; i<client.timeline_size(); i++){
-                    std::cout << "i: " << i << std::endl;
                     struct Post p;
                     p.name = client.timeline(i).name();
                     p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
@@ -457,6 +456,11 @@ private:
             quantity = requester.timeline.size();
             setStaleFile(request->username(), requester.timeline.size());
         }
+
+        if(quantity > 20){
+            quantity = 20;
+        }
+
         for (auto postIt = requester.timeline.begin(); postIt < requester.timeline.begin() + quantity; postIt++) {
             network::Post* currPost = reply->mutable_updated()->add_posts();
             currPost->set_name(postIt->name);
