@@ -41,7 +41,17 @@ using namespace std;
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
-    //// Server Relevant Variables
+    /********************************
+     *
+     * Server Relevant Variables
+     *
+     *******************************/
+public:
+    /* Maximum amount of posts allowed in a user's timeline
+     */
+    static const int MAX_TIMELINE = 20;
+
+private:
     struct Post {
         string name;
         time_t timestamp;
@@ -61,12 +71,36 @@ class SNSImpl final : public SNS::Service {
 
     unordered_map<string, User> UserDB;
 
-    // Add post to user's and follower's timelines and flags data as stale
+    /* Add post to user's and follower's timelines and flags their data as stale
+     * Requires Post& to be added to all timelines
+     */
     void AddUserPost(const Post& post) {
+        User& sender = UserDB.at(post.name);
+        
+        // Add to user's timeline, resizing if too large
+        sender.timeline.push_front(post);
+        if (sender.timeline.size() > MAX_TIMELINE) {
+            sender.timeline.resize(MAX_TIMELINE);
+        }
 
+        // Add to follower's timelines and update stale value
+        for (auto followerIt = sender.followers.begin(); followerIt != sender.followers.end(); followerIt++) {
+            User& currentFollower = UserDB.at(*followerIt);
+            currentFollower.timeline.push_front(post);
+            if (currentFollower.timeline.size() > MAX_TIMELINE) {
+                currentFollower.timeline.resize(MAX_TIMELINE);
+            }
+            if (currentFollower.clientDataStale >= 0 && currentFollower.clientDataStale < 20) {
+                currentFollower.clientDataStale += 1;
+            }
+        }
     }
 
-    //// GRPC IMPLEMENTATION
+    /*****************************
+     *
+     * GRPC IMPLEMENTATION
+     *
+     ****************************/
 
     Status InitConnect(ServerContext* context, const ClientConnect* connection, ServerAllow* response) override {
         // Fail by default
@@ -185,7 +219,7 @@ class SNSImpl final : public SNS::Service {
             reply->add_users(name);
         }
 
-        //Find the DB entry that cooresponds to the requester's username
+        //Find the DB entry that corresponds to the requester's username
         std::string username = request->username();
         auto& requester = UserDB.at(username);
 
@@ -210,9 +244,10 @@ class SNSImpl final : public SNS::Service {
         
     }
 
-    // Handle client post sending
-    // Returns server Status
-    // Requires ServerContext*, network::Post* (NOT SNSImpl::Post), PostReply*
+    /* Handle client post sending
+     * Returns server Status
+     * Requires ServerContext*, network::Post* (NOT SNSImpl::Post), PostReply*
+     */
     Status SendPost(ServerContext* context, const network::Post* postReq, PostReply* postRep) override {
         using namespace google::protobuf;
         // Put data into new SNSImpl::Post
@@ -220,8 +255,14 @@ class SNSImpl final : public SNS::Service {
         inPost.name = postReq->name();
         inPost.timestamp = util::TimeUtil::TimestampToTimeT(postReq->time());
         inPost.content = postReq->content();
-        // Add to correct user timeline and follower's timelines
 
+        cout << "Received Post from " << inPost.name << endl;
+        cout << "\t" << "Time: " << ctime(&inPost.timestamp) << endl;
+        cout << "\t" << "Content: " << inPost.content << endl;
+        // Add to correct user timeline and follower's timelines
+        AddUserPost(inPost);
+
+        postRep->set_ireplyvalue(0);
         return Status::OK;
     }
 

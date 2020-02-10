@@ -68,8 +68,7 @@ message UpdateRequest {
 }
 
 message UpdateReply {
-    int32 quantity = 1;
-    Timeline updated = 2;
+    Timeline updated = 1;
 }
 
 message PostReply {

@@ -24,6 +24,8 @@ using network::ListRequest;
 using network::ListReply;
 using network::UpdateRequest;
 using network::UpdateReply;
+using network::Post;
+using network::PostReply;
 
 
 class Client : public IClient
@@ -306,7 +308,7 @@ IReply Client::processCommand(std::string& input)
         }
         
     }else if(cmd == "TIMELINE"){
-
+        
     }else if(cmd == "DEBUG"){
         UpdateRequest upReq;
         upReq.set_username(username);
@@ -325,6 +327,19 @@ IReply Client::processCommand(std::string& input)
             }
         }
 
+    }else if (cmd == "SEND") {
+        Post post;
+        post.set_name(username);
+        post.set_content(argument);
+        *post.mutable_time() = google::protobuf::util::TimeUtil::GetCurrentTime();
+        PostReply postRep;
+        reply.grpc_status = stub_->SendPost(&clientCtxt, post, &postRep);
+        if (reply.grpc_status.ok()) {
+            reply.comm_status = SUCCESS;
+        }
+        else {
+            reply.comm_status = FAILURE_UNKNOWN;
+        }
     }else{
         std::cout << "Invalid Command\n";
     }
