@@ -95,11 +95,12 @@ public:
                 user.timeline.resize(client.timeline_size());
                 std::cout << "timeline size: " << client.timeline_size() << std::endl;
                 for(int i=0; i<client.timeline_size(); i++){
+                    std::cout << "i: " << i << std::endl;
                     struct Post p;
                     p.name = client.timeline(i).name();
                     p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
                     p.content = client.timeline(i).content();
-                    user.timeline.push_back(p);
+                    user.timeline.push_front(p);
                 }
                 UserDB.insert({ client.name(), user});
             }
@@ -151,7 +152,7 @@ private:
         // Add to follower's timelines and update stale value
         for (auto followerIt = sender.followers.begin(); followerIt != sender.followers.end(); followerIt++) {
             User& currentFollower = UserDB.at(*followerIt);
-            currentFollower.timeline.push_front(post); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!pushback!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            currentFollower.timeline.push_front(post);
             if (currentFollower.timeline.size() > MAX_TIMELINE) {
                 currentFollower.timeline.resize(MAX_TIMELINE);
             }
@@ -175,10 +176,10 @@ private:
         
         // This is based on the implementation I used in Update() in the for loop at line 416
         network::Post* instancedPost = sender.mutable_timeline()->Add();
-        
         // I used swap here since netPost isn't modified after this line, but if it is, you can probably use CopyFrom()
         instancedPost->CopyFrom(netPost);
-        ofstream SenderOutput("clients/" + post.name + ".txt");
+        //sender.mutable_timeline()->RemoveLast();
+        ofstream SenderOutput("clients/" + post.name + ".txt", ios::trunc);
         sender.SerializeToOstream(&SenderOutput);
         SenderOutput.close();
         // If you feed in a value with Add() it needs to be an rvalue (tried looking at reference for it, but it's a little confusing)
@@ -192,11 +193,13 @@ private:
             network::Post* followerInstancedPost = follower.mutable_timeline()->Add();
             //followerInstancedPost->Swap(&netPost);
             followerInstancedPost->CopyFrom(netPost);
+            //follower.mutable_timeline()->RemoveLast();
+
             int stale = follower.clientdatastale();
             if (stale >= 0 && stale < 20) {
                 follower.set_clientdatastale(stale+1);
             }
-            ofstream FollowerOutput("clients/" + *followerIt + ".txt");
+            ofstream FollowerOutput("clients/" + *followerIt + ".txt", ios::trunc);
             follower.SerializeToOstream(&FollowerOutput);
             FollowerOutput.close();
         }
