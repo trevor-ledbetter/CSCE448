@@ -274,7 +274,7 @@ IReply Client::processCommand(std::string& input)
 
     }else{
         std::cout << "Invalid Command\n";
-        
+
     }
 
     return reply;

@@ -77,7 +77,6 @@ public:
         }
         closedir(dirp);
 
-        std::cout << "number of files: " << fileNames.size() << std::endl;
         //For each client's file create an entry in the server's DB
         for(int i=0; i<fileNames.size(); i++){
             //make sure the file ends in .txt
@@ -92,8 +91,9 @@ public:
                 User user(client.name());
                 user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
                 user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
-                user.timeline.resize(client.timeline_size());
-                std::cout << "timeline size: " << client.timeline_size() << std::endl;
+                //user.timeline.resize(client.timeline_size());
+                user.clientStaleDataCount = client.clientdatastale();
+                //std::cout << "timeline size: " << client.timeline_size() << std::endl;
                 for(int i=0; i<client.timeline_size(); i++){
                     std::cout << "i: " << i << std::endl;
                     struct Post p;
@@ -101,6 +101,7 @@ public:
                     p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
                     p.content = client.timeline(i).content();
                     user.timeline.push_front(p);
+                    //user.timeline.insert(i, p);
                 }
                 UserDB.insert({ client.name(), user});
             }
@@ -160,6 +161,18 @@ private:
                 currentFollower.clientStaleDataCount += 1;
             }
         }
+    }
+
+    void setStaleFile(std::string clientName, int staleValue){
+        ifstream inputFile("clients/" + clientName + ".txt");
+        network::User user;
+        user.ParseFromIstream(&inputFile);
+        inputFile.close();
+        user.set_clientdatastale(staleValue);
+        ofstream outputFile("clients/" + clientName + ".txt", ios::trunc);
+        user.SerializeToOstream(&outputFile);
+        outputFile.close();
+        return;
     }
 
     void AddUserPostFile(const Post& post) {
@@ -231,6 +244,7 @@ private:
             ofstream File("clients/" + clientName + ".txt");
             network::User user;
             user.set_name(clientName);
+            user.set_clientdatastale(-1);
             user.SerializeToOstream(&File);
             File.close();
         }
@@ -238,12 +252,22 @@ private:
             cout << "Not adding duplicate user:\t" << clientName << endl;
             cout << "\tSetting stale data value to -1" << endl;
             UserDB.at(clientName).clientStaleDataCount = -1;
+
+            ifstream inputFile("clients/" + clientName + ".txt");
+            network::User user;
+            user.ParseFromIstream(&inputFile);
+            inputFile.close();
+            user.set_clientdatastale(-1);
+            ofstream outputFile("clients/" + clientName + ".txt", ios::trunc);
+            user.SerializeToOstream(&outputFile);
+            outputFile.close();
+
             response->set_ireplyvalue(0);
         }
 
         return Status::OK;
     }
-
+    
     /* RPC called when client wants to follow a user
      */
     Status Follow(ServerContext* context, const FollowRequest* request, FollowReply* reply) override {
@@ -427,9 +451,11 @@ private:
         // Send necessary posts to the client
         User& requester = UserDB.at(request->username());
         int& quantity = requester.clientStaleDataCount;
+        
         // Make quantity the timeline size if initializing
         if (quantity == -1) {
             quantity = requester.timeline.size();
+            setStaleFile(request->username(), requester.timeline.size());
         }
         for (auto postIt = requester.timeline.begin(); postIt < requester.timeline.begin() + quantity; postIt++) {
             network::Post* currPost = reply->mutable_updated()->add_posts();
@@ -441,6 +467,7 @@ private:
         cout << "\t" << "Number of posts: " << quantity << endl;
         // Reset stale quantity to 0
         quantity = 0;
+        setStaleFile(request->username(), 0);
         return Status::OK;
     }
 
@@ -460,7 +487,6 @@ private:
         // Add to correct user timeline and follower's timelines
         AddUserPost(inPost);
         AddUserPostFile(inPost);
-        //lkuhuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 
         postRep->set_ireplyvalue(0);
         return Status::OK;
