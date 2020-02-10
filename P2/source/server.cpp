@@ -56,7 +56,54 @@ public:
     /* Maximum amount of posts allowed in a user's timeline
      */
     static const int MAX_TIMELINE = 20;
+    void populateDB(){
+        //Check to see if clients folder exists, if not create one
+        std::string folder = "clients";
+        struct stat sb;
+        if (!(stat(folder.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
+        {
+            int status = mkdir(folder.c_str(), 0777);
+            if(status != 0){
+                std::cout << "Error: Folder creation" << std::endl;
+            }
+        }
 
+        //Obtain list of file names in the clients directory
+        std::vector<std::string> fileNames;
+        DIR* dirp = opendir(folder.c_str());
+        struct dirent* dp;
+        while((dp = readdir(dirp)) != NULL){
+            fileNames.push_back(dp->d_name);
+        }
+        closedir(dirp);
+
+        std::cout << "number of files: " << fileNames.size() << std::endl;
+        //For each client's file create an entry in the server's DB
+        for(int i=0; i<fileNames.size(); i++){
+            //make sure the file ends in .txt
+            if(has_suffix(fileNames[i], ".txt")){
+                //Read in the client's data
+                ifstream ClientInput("clients/" + fileNames[i]); //input open
+                network::User client;
+                client.ParseFromIstream(&ClientInput);
+                ClientInput.close(); //input close
+                
+                //Copy cleints data to DB field by field (unfortuanitely)
+                User user(client.name());
+                user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
+                user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
+                user.timeline.resize(client.timeline_size());
+                for(int i=0; i<client.timeline_size(); i++){
+                    struct Post p;
+                    p.name = client.timeline(i).name();
+                    p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
+                    p.content = client.timeline(i).content();
+                    user.timeline.push_back(p);
+                }
+                UserDB.insert({ client.name(), user});
+            }
+        }
+    }
 private:
     /* Contains data relevant to posts
      */
@@ -103,7 +150,7 @@ private:
         // Add to follower's timelines and update stale value
         for (auto followerIt = sender.followers.begin(); followerIt != sender.followers.end(); followerIt++) {
             User& currentFollower = UserDB.at(*followerIt);
-            currentFollower.timeline.push_front(post);
+            currentFollower.timeline.push_front(post); //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!pushback!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if (currentFollower.timeline.size() > MAX_TIMELINE) {
                 currentFollower.timeline.resize(MAX_TIMELINE);
             }
@@ -111,6 +158,28 @@ private:
                 currentFollower.clientStaleDataCount += 1;
             }
         }
+    }
+
+    void AddUserPostFile(const Post& post) {
+        network::Post netPost;
+        netPost.set_name(post.name);
+        //netPost.set_allocated_time(&google::protobuf::util::TimeUtil::TimeTToTimestamp(post.timestamp));
+        *netPost.mutable_time() = google::protobuf::util::TimeUtil::TimeTToTimestamp(post.timestamp);
+        netPost.set_content(post.content);
+
+        ifstream SenderInput("clients/" + post.name + ".txt");
+        network::User sender;
+        sender.ParseFromIstream(&SenderInput);
+        SenderInput.close();
+        //network::Post* point = sender.mutable_timeline()->Add();
+        //point = &netPost;
+        sender.mutable_timeline()->Add(netPost);
+        //sender.mutable_timeline()->push_back(netpost);
+        //sender.timeline().Add();
+        //int size = sender.timeline_size();
+
+        //sender.timeline_add(netPost);
+        //sender.timeline()->[size-1] = netPost;
     }
 
     /*****************************
@@ -365,6 +434,7 @@ private:
         cout << "\t" << "Content: " << inPost.content << endl;
         // Add to correct user timeline and follower's timelines
         AddUserPost(inPost);
+        //lkuhuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 
         postRep->set_ireplyvalue(0);
         return Status::OK;
@@ -379,63 +449,12 @@ private:
         std::cout << "Timestamped out: " << util::TimeUtil::ToString(tStamp) << std::endl;
         return Status::OK;
     }
-
-    public:
-    void populateDB(){
-        //Check to see if clients folder exists, if not create one
-        std::string folder = "clients";
-        struct stat sb;
-        if (!(stat(folder.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
-        {
-            int status = mkdir(folder.c_str(), 0777);
-            if(status != 0){
-                std::cout << "Error: Folder creation" << std::endl;
-            }
-        }
-
-        //Obtain list of file names in the clients directory
-        std::vector<std::string> fileNames;
-        DIR* dirp = opendir(folder.c_str());
-        struct dirent* dp;
-        while((dp = readdir(dirp)) != NULL){
-            fileNames.push_back(dp->d_name);
-        }
-        closedir(dirp);
-
-        std::cout << "number of files: " << fileNames.size() << std::endl;
-        //For each client's file create an entry in the server's DB
-        for(int i=0; i<fileNames.size(); i++){
-            //make sure the file ends in .txt
-            if(has_suffix(fileNames[i], ".txt")){
-                //Read in the client's data
-                ifstream ClientInput("clients/" + fileNames[i]); //input open
-                network::User client;
-                client.ParseFromIstream(&ClientInput);
-                ClientInput.close(); //input close
-                
-                //Copy cleints data to DB field by field (unfortuanitely)
-                User user(client.name());
-                user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
-                user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
-                user.timeline.resize(client.timeline_size());
-                for(int i=0; i<client.timeline_size(); i++){
-                    struct Post p;
-                    p.name = client.timeline(i).name();
-                    p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
-                    p.content = client.timeline(i).content();
-                    user.timeline.push_back(p);
-                }
-                UserDB.insert({ client.name(), user});
-            }
-        }
-    }
-    //// END GRPC IMPLEMENTATION
-
+    
     bool has_suffix(const std::string &str, const std::string &suffix)
     {
         return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
     }
-};
+}; //// END GRPC IMPLEMENTATION
 
 void RunServer(std::string port) {
     std::string server_address("0.0.0.0:" + port);

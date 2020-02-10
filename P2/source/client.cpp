@@ -237,30 +237,9 @@ IReply Client::processCommand(std::string& input)
         reply.grpc_status = stub_->List(&clientCtxt, listReq, &listRep);
         if (reply.grpc_status.ok()) {
             //Copy names from the ListReply to the IReply, which is returned
-            //right now we are copying element by element but there might be a better way??
-            //Im not sure what listRep's users, is exactly but its not a vectortime
-
-            /*int size = listRep.users_size();
-            std::cout << "size is: " << size << std::endl;
-            for(int i=0; i<size; i++){
-                auto user_name = listRep.users(i);
-                //std::cout << user_name << std::endl;
-                reply.all_users.push_back(user_name);
-            }
-
-            int size2 = listRep.followers_size();
-            std::cout << "size2 is: " << size2 << std::endl;
-            for(int i=0; i<size2; i++){
-                auto follower_name = listRep.followers(i);
-                //std::cout << follower_name << std::endl;
-                reply.followers.push_back(follower_name);
-            }*/
-            
             reply.all_users = {listRep.mutable_users()->begin(), listRep.mutable_users()->end()};
             reply.followers = {listRep.mutable_followers()->begin(), listRep.mutable_followers()->end()};
-
             reply.comm_status = getStatus(listRep.ireplyvalue());
-            
         }
         else {
             reply.comm_status = FAILURE_UNKNOWN;
@@ -268,6 +247,7 @@ IReply Client::processCommand(std::string& input)
         
     }else if(cmd == "TIMELINE"){
         reply.comm_status = SUCCESS;
+
     }else if(cmd == "DEBUG"){
         UpdateRequest upReq;
         upReq.set_username(username);
@@ -288,10 +268,13 @@ IReply Client::processCommand(std::string& input)
 
     }else if (cmd == "SEND") {
         sendPost(argument);
+
     }else if (cmd == "UPDATE") {
         checkForUpdate();
+
     }else{
         std::cout << "Invalid Command\n";
+        
     }
 
     return reply;
