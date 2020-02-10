@@ -57,6 +57,10 @@ server: network.pb.o network.grpc.pb.o server.o
 clean:
 	rm -f *.o *.pb.cc *.pb.h client server
 
+# This directive will clear the server data cache
+initialize_db:
+	rm -rf clients
+
 
 # The following is to test your system and ensure a smoother experience.
 # They are by no means necessary to actually compile a grpc-enabled software.
