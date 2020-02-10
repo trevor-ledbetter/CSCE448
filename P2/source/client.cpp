@@ -264,7 +264,7 @@ IReply Client::processCommand(std::string& input)
             //Im not sure what listRep's users, is exactly but its not a vector
             std::cout << "Type is: " << typeid(reply.all_users).name() << std::endl;
 
-            int size = listRep.users_size();
+            /*int size = listRep.users_size();
             std::cout << "size is: " << size << std::endl;
             for(int i=0; i<size; i++){
                 auto user_name = listRep.users(i);
@@ -278,7 +278,9 @@ IReply Client::processCommand(std::string& input)
                 auto follower_name = listRep.followers(i);
                 //std::cout << follower_name << std::endl;
                 reply.followers.push_back(follower_name);
-            }
+            }*/
+            reply.all_users = {listRep.mutable_users()->begin(), listRep.mutable_users()->end()};
+            reply.followers = {listRep.mutable_followers()->begin(), listRep.mutable_followers()->end()};
 
             switch(listRep.ireplyvalue()){
             case 0:

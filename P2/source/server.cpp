@@ -8,12 +8,18 @@
 #include <algorithm>
 #include <functional>
 #include <queue>
+#include <fstream>
+#include <sys/types.h>
+#include <dirent.h>
+#include <sys/stat.h>
 
 #include <unistd.h>
 #include <grpc++/grpc++.h>
 #include "client.h"
 #include "network.grpc.pb.h"
 #include <google/protobuf/util/time_util.h>
+#include <google/protobuf/message_lite.h>
+#include <google/protobuf/message.h>
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -80,6 +86,13 @@ class SNSImpl final : public SNS::Service {
             UserDB.insert({ clientName, User(clientName) });
             cout << "Adding user:\t" << clientName << endl;
             response->set_ireplyvalue(0);
+
+            //create a file with the client's username and place an empty User message in it
+            ofstream File("clients/" + clientName + ".txt");
+            network::User user;
+            user.set_name(clientName);
+            user.SerializeToOstream(&File);
+            File.close();
         }
         else {
             cout << "Not adding duplicate user:\t" << clientName << endl;
@@ -94,8 +107,8 @@ class SNSImpl final : public SNS::Service {
         reply->set_ireplyvalue(5);
 
         // Extract values from protocol buffer
-        const string reqUser   = request->requestingclient();
-        const string followReq = request->followrequest();
+        const string reqUser   = request->requestingclient(); //Follower
+        const string followReq = request->followrequest(); //Followed
 
         // Find specified user, and add if not already in follow list
         // Check not self
@@ -121,6 +134,26 @@ class SNSImpl final : public SNS::Service {
             followVec.push_back(followReq);
             // Add to other user's follower's list
             dbIt->second.followers.push_back(reqUser);
+
+            //Repeat for persistent memory
+            ifstream FollowedInput("clients/" + followReq + ".txt"); //input open
+            network::User followed;
+            followed.ParseFromIstream(&FollowedInput);
+            FollowedInput.close(); //input close
+            followed.add_followers(reqUser);
+            ofstream FollowedOutput("clients/" + followReq + ".txt"); //output open
+            followed.SerializeToOstream(&FollowedOutput);
+            FollowedOutput.close(); //output close
+
+            ifstream FollowerInput("clients/" + reqUser + ".txt"); //input open
+            network::User follower;
+            follower.ParseFromIstream(&FollowerInput);
+            FollowerInput.close(); //input close
+            follower.add_following(followReq);
+            ofstream FollowerOutput("clients/" + reqUser + ".txt"); //output open
+            follower.SerializeToOstream(&FollowerOutput);
+            FollowerOutput.close(); //output close
+            
             reply->set_ireplyvalue(0);
             return Status::OK;
         }
@@ -138,8 +171,8 @@ class SNSImpl final : public SNS::Service {
         reply->set_ireplyvalue(5);
 
         // Extract values from protocol buffer
-        const string reqUser = request->requestingclient();
-        const string unfollowReq = request->unfollowrequest();
+        const string reqUser = request->requestingclient(); //reqUser is unfollowing unfollowReq
+        const string unfollowReq = request->unfollowrequest(); //unfollowed
 
         // Find specified user, and add if not already in follow list
         // Check request in following list
@@ -149,12 +182,44 @@ class SNSImpl final : public SNS::Service {
         if (followVecIt != followVec.end()) {
             // Erase from following list
             followVec.erase(followVecIt);
+
+            //Erase from Persistant Memory
+            ifstream UnfollowerInput("clients/" + reqUser + ".txt"); //input open
+            network::User unfollower;
+            unfollower.ParseFromIstream(&UnfollowerInput);
+            UnfollowerInput.close(); //input close
+            for(int i=0; i<unfollower.following_size(); i++){
+                if(unfollower.following(i) == unfollowReq){
+                    unfollower.mutable_following()->SwapElements(i, unfollower.following_size()-1);
+                    unfollower.mutable_following()->RemoveLast();
+                    break;
+                }
+            }
+            ofstream UnfollowerOutput("clients/" + reqUser + ".txt", ios::trunc); //output open, and delete previous contents!
+            unfollower.SerializeToOstream(&UnfollowerOutput);
+            UnfollowerOutput.close(); //output close
             
             // Erase from other user's followers list
             auto& otherFollowerVec = UserDB.at(unfollowReq).followers;
             auto userInOtherVecIt = find(otherFollowerVec.begin(), otherFollowerVec.end(), reqUser);
             if (userInOtherVecIt != otherFollowerVec.end()) {
                 otherFollowerVec.erase(userInOtherVecIt);
+
+                //Erase from persistant memory
+                ifstream UnfollowedInput("clients/" + unfollowReq + ".txt"); //input open
+                network::User unfollowed;
+                unfollowed.ParseFromIstream(&UnfollowedInput);
+                UnfollowedInput.close(); //input close
+                for(int i=0; i<unfollowed.followers_size(); i++){
+                    if(unfollowed.followers(i) == reqUser){
+                        unfollowed.mutable_followers()->SwapElements(i, unfollowed.followers_size()-1);
+                        unfollowed.mutable_followers()->RemoveLast();
+                        break;
+                    }
+                }
+                ofstream UnfollowedOutput("clients/" + unfollowReq + ".txt", ios::trunc); //output open, and delete previous contents!
+                unfollower.SerializeToOstream(&UnfollowerOutput);
+                UnfollowerOutput.close(); //output close
             }
             else {
                 // If the requesting user wasn't found in the other's followers list
@@ -235,12 +300,58 @@ class SNSImpl final : public SNS::Service {
         return Status::OK;
     }
 
+    public:
+    void populateDB(){
+        //Check to see if clients folder exists, if not create one
+        std::string folder = "clients";
+        struct stat sb;
+        if (!(stat(folder.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode)))
+        {
+            int status = mkdir(folder.c_str(), 0777);
+            if(status != 0){
+                std::cout << "Error: Folder creation" << std::endl;
+            }
+        }
+
+        //Obtain list of file names in the clients directory
+        std::vector<std::string> fileNames;
+        DIR* dirp = opendir(folder.c_str());
+        struct dirent* dp;
+        while((dp = readdir(dirp)) != NULL){
+            fileNames.push_back(dp->d_name);
+        }
+        closedir(dirp);
+
+        //For each client's file create an entry in the server's DB
+        for(int i=0; i<fileNames.size(); i++){
+            //Read in the client's data
+            ifstream ClientInput("clients/" + fileNames[i]); //input open
+            network::User client;
+            client.ParseFromIstream(&ClientInput);
+            ClientInput.close(); //input close
+            
+            //Copy cleints data to DB field by field (unfortuanitely)
+            User user(client.name());
+            user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
+            user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
+            user.timeline.resize(client.timeline_size());
+            for(int i=0; i<client.timeline_size(); i++){
+                struct Post p;
+                p.name = client.timeline(i).name();
+                p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
+                p.content = client.timeline(i).content();
+                user.timeline.push_back(p);
+            }
+            UserDB.insert({ client.name(), user});
+        }
+    }
     //// END GRPC IMPLEMENTATION
 };
 
 void RunServer(std::string port) {
     std::string server_address("0.0.0.0:" + port);
     SNSImpl service;
+    service.populateDB();
     ServerBuilder builder;
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());

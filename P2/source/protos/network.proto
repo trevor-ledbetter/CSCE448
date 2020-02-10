@@ -106,3 +106,11 @@ message DebugRequest {
 message DebugReply {
     google.protobuf.Timestamp timeout = 1;
 }
+
+message User{
+    string name = 1;
+    repeated Post timeline = 2;
+    int32 clientDataStale = 3;
+    repeated string following = 4;
+    repeated string followers = 5;
+}
