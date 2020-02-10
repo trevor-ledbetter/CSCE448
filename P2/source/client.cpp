@@ -108,26 +108,7 @@ int Client::connectTo()
     connectionReq.set_connectingclient(username);
     replyStatus.grpc_status = stub_->InitConnect(&clientCtx, connectionReq, &serverResponse);
     if (replyStatus.grpc_status.ok()) {
-        switch (serverResponse.ireplyvalue()) {
-        case 0:
-            replyStatus.comm_status = SUCCESS;
-            break;
-        case 1:
-            replyStatus.comm_status = FAILURE_ALREADY_EXISTS;
-            break;
-        case 2:
-            replyStatus.comm_status = FAILURE_NOT_EXISTS;
-            break;
-        case 3:
-            replyStatus.comm_status = FAILURE_INVALID_USERNAME;
-            break;
-        case 4:
-            replyStatus.comm_status = FAILURE_INVALID;
-            break;
-        case 5:
-            replyStatus.comm_status = FAILURE_UNKNOWN;
-            break;
-        }
+        replyStatus.comm_status = getStatus(serverResponse.ireplyvalue());
     }
     else {
         replyStatus.comm_status = FAILURE_UNKNOWN;
@@ -199,26 +180,7 @@ IReply Client::processCommand(std::string& input)
         FollowReply followRep;
         reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
         if (reply.grpc_status.ok()) {
-            switch(followRep.ireplyvalue()){
-            case 0:
-                reply.comm_status = SUCCESS;
-                break;
-            case 1:
-                reply.comm_status = FAILURE_ALREADY_EXISTS;
-                break;
-            case 2:
-                reply.comm_status = FAILURE_NOT_EXISTS;
-                break;
-            case 3:
-                reply.comm_status = FAILURE_INVALID_USERNAME;
-                break;
-            case 4:
-                reply.comm_status = FAILURE_INVALID;
-                break;
-            case 5:
-                reply.comm_status = FAILURE_UNKNOWN;
-                break;
-            }
+            reply.comm_status = getStatus(followRep.ireplyvalue());
         }
         else {
             reply.comm_status = FAILURE_UNKNOWN;
@@ -231,26 +193,7 @@ IReply Client::processCommand(std::string& input)
         UnfollowReply unfollowRep;
         reply.grpc_status = stub_->Unfollow(&clientCtxt, unfollowReq, &unfollowRep);
         if (reply.grpc_status.ok()) {
-            switch(unfollowRep.ireplyvalue()){
-                case 0:
-                    reply.comm_status = SUCCESS;
-                    break;
-                case 1:
-                    reply.comm_status = FAILURE_ALREADY_EXISTS;
-                    break;
-                case 2:
-                    reply.comm_status = FAILURE_NOT_EXISTS;
-                    break;
-                case 3:
-                    reply.comm_status = FAILURE_INVALID_USERNAME;
-                    break;
-                case 4:
-                    reply.comm_status = FAILURE_INVALID;
-                    break;
-                case 5:
-                    reply.comm_status = FAILURE_UNKNOWN;
-                    break;
-            }
+            reply.comm_status = getStatus(unfollowRep.ireplyvalue());
         }
         else {
             reply.comm_status = FAILURE_UNKNOWN;
@@ -282,27 +225,8 @@ IReply Client::processCommand(std::string& input)
                 //std::cout << follower_name << std::endl;
                 reply.followers.push_back(follower_name);
             }
-
-            switch(listRep.ireplyvalue()){
-            case 0:
-                reply.comm_status = SUCCESS;
-                break;
-            case 1:
-                reply.comm_status = FAILURE_ALREADY_EXISTS;
-                break;
-            case 2:
-                reply.comm_status = FAILURE_NOT_EXISTS;
-                break;
-            case 3:
-                reply.comm_status = FAILURE_INVALID_USERNAME;
-                break;
-            case 4:
-                reply.comm_status = FAILURE_INVALID;
-                break;
-            case 5:
-                reply.comm_status = FAILURE_UNKNOWN;
-                break;
-            }
+            reply.comm_status = getStatus(listRep.ireplyvalue());
+            
         }
         else {
             reply.comm_status = FAILURE_UNKNOWN;
@@ -374,4 +298,23 @@ IReply Client::sendPost(const std::string& msg)
         reply.comm_status = FAILURE_UNKNOWN;
     }
     return reply;
+}
+
+IStatus Client::getStatus(const int statusID)
+{
+    switch (statusID) {
+    case 0:
+        return SUCCESS;
+    case 1:
+        return FAILURE_ALREADY_EXISTS;
+    case 2:
+        return FAILURE_NOT_EXISTS;
+    case 3:
+        return FAILURE_INVALID_USERNAME;
+    case 4:
+        return FAILURE_INVALID;
+    case 5:
+        return FAILURE_UNKNOWN;
+    }
+    return FAILURE_UNKNOWN;
 }
