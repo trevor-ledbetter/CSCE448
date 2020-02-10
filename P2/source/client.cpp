@@ -45,11 +45,18 @@ class Client : public IClient
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
         virtual void processTimeline();
+
         /**
          * Posts to user and follower timeline on server
          * @param msg Message to post
          */
         virtual IReply sendPost(const std::string& msg);
+
+        /**
+         * Requests updates to the timeline from the server and prints if any
+         */
+        virtual void updatePosts();
+
         /** 
          Returns proper IStatus from RPC status id
          * @param statusID RPC id number
@@ -263,6 +270,8 @@ IReply Client::processCommand(std::string& input)
 
     }else if (cmd == "SEND") {
         sendPost(argument);
+    }else if (cmd == "UPDATE") {
+        updatePosts();
     }else{
         std::cout << "Invalid Command\n";
     }
@@ -307,6 +316,28 @@ IReply Client::sendPost(const std::string& msg)
         reply.comm_status = FAILURE_UNKNOWN;
     }
     return reply;
+}
+
+void Client::updatePosts()
+{
+    UpdateRequest request;
+    UpdateReply requestReply;
+    ClientContext clientCtxt;
+    request.set_username(username);
+    Status stats = stub_->Update(&clientCtxt, request, &requestReply);
+    if (stats.ok()) {
+        if (requestReply.has_updated()) {
+            for (auto postsIt = requestReply.updated().posts().begin(); postsIt != requestReply.updated().posts().end(); postsIt++) {
+                const std::string& name = postsIt->name();
+                const std::string& msg = postsIt->content();
+                time_t time = google::protobuf::util::TimeUtil::TimestampToTimeT(postsIt->time());
+                displayPostMessage(name, msg, time);
+            }
+        }
+    }
+    else {
+        std::cerr << "Error occurred receiving update" << std::endl;
+    }
 }
 
 IStatus Client::getStatus(const int statusID)

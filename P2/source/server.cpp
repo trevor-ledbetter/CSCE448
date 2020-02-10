@@ -64,11 +64,16 @@ private:
      */
     struct User {
         User(const string& name_)
-            : name(name_), clientDataStale(-1) {}
+            : name(name_), clientStaleDataCount(-1) {}
 
         string name;
         deque<Post> timeline;
-        int clientDataStale;
+        /**
+         * Value which determines how much to send in UpdateReply
+         * < 0 => First time update is called, send full timeline
+         * > 0 => Send quantity of posts
+         */
+        int clientStaleDataCount;
         vector<string> following;
         vector<string> followers;
     };
@@ -96,8 +101,8 @@ private:
             if (currentFollower.timeline.size() > MAX_TIMELINE) {
                 currentFollower.timeline.resize(MAX_TIMELINE);
             }
-            if (currentFollower.clientDataStale >= 0 && currentFollower.clientDataStale < 20) {
-                currentFollower.clientDataStale += 1;
+            if (currentFollower.clientStaleDataCount >= 0 && currentFollower.clientStaleDataCount < 20) {
+                currentFollower.clientStaleDataCount += 1;
             }
         }
     }
@@ -126,6 +131,8 @@ private:
         }
         else {
             cout << "Not adding duplicate user:\t" << clientName << endl;
+            cout << "\tSetting stale data value to -1" << endl;
+            UserDB.at(clientName).clientStaleDataCount = -1;
             response->set_ireplyvalue(0);
         }
 
@@ -254,15 +261,24 @@ private:
 
         return Status::OK;
     }
-
+    
+    /* RPC called from client timeline mode at regular intervals that requests any updates to the client timeline
+     */
     Status Update(ServerContext* context, const UpdateRequest* request, UpdateReply* reply) override {
-        network::Post* testPost = reply->mutable_updated()->add_posts();
-        testPost->set_name("default");
-        *testPost->mutable_time() = google::protobuf::util::TimeUtil::GetCurrentTime();
-        testPost->set_content("testPost 1");
-
+        // Send necessary posts to the client
+        User& requester = UserDB.at(request->username());
+        int& quantity = requester.clientStaleDataCount;
+        for (auto postIt = requester.timeline.begin(); postIt < requester.timeline.begin() + quantity; postIt++) {
+            network::Post* currPost = reply->mutable_updated()->add_posts();
+            currPost->set_name(postIt->name);
+            currPost->set_content(postIt->content);
+            *currPost->mutable_time() = google::protobuf::util::TimeUtil::TimeTToTimestamp(postIt->timestamp);
+        }
+        cout << "Sending updated timeline to " << requester.name << endl;
+        cout << "\t" << "Number of posts: " << quantity << endl;
+        // Reset stale quantity to 0
+        quantity = 0;
         return Status::OK;
-        
     }
 
     /* RPC called from client timeline mode when user wishes to post
