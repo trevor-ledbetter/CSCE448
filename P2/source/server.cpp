@@ -173,7 +173,16 @@ private:
         SenderInput.close();
         //network::Post* point = sender.mutable_timeline()->Add();
         //point = &netPost;
-        sender.mutable_timeline()->Add(netPost);
+        
+        // This is based on the implementation I used in Update() in the for loop at line 416
+        network::Post* instancedPost = sender.mutable_timeline()->Add();
+        
+        // I used swap here since netPost isn't modified after this line, but if it is, you can probably use CopyFrom()
+        instancedPost->Swap(&netPost);
+        
+        // If you feed in a value with Add() it needs to be an rvalue (tried looking at reference for it, but it's a little confusing)
+        // Using std::move() still doesn't work though, and I can't figure out why, so this is just what works for now I guess
+        
         //sender.mutable_timeline()->push_back(netpost);
         //sender.timeline().Add();
         //int size = sender.timeline_size();
