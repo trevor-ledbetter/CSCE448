@@ -403,6 +403,8 @@ private:
             std::string name = it;
             reply->add_followers(name);
         }
+        // Add user to own follower list
+        reply->add_followers(username);
         reply->set_ireplyvalue(0);
 
         return Status::OK;
