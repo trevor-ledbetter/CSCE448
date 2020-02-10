@@ -238,8 +238,7 @@ IReply Client::processCommand(std::string& input)
         if (reply.grpc_status.ok()) {
             //Copy names from the ListReply to the IReply, which is returned
             //right now we are copying element by element but there might be a better way??
-            //Im not sure what listRep's users, is exactly but its not a vector
-            std::cout << "Type is: " << typeid(reply.all_users).name() << std::endl;
+            //Im not sure what listRep's users, is exactly but its not a vectortime
 
             /*int size = listRep.users_size();
             std::cout << "size is: " << size << std::endl;
@@ -256,6 +255,7 @@ IReply Client::processCommand(std::string& input)
                 //std::cout << follower_name << std::endl;
                 reply.followers.push_back(follower_name);
             }*/
+            
             reply.all_users = {listRep.mutable_users()->begin(), listRep.mutable_users()->end()};
             reply.followers = {listRep.mutable_followers()->begin(), listRep.mutable_followers()->end()};
 

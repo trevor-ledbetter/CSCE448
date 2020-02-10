@@ -402,30 +402,39 @@ private:
         }
         closedir(dirp);
 
+        std::cout << "number of files: " << fileNames.size() << std::endl;
         //For each client's file create an entry in the server's DB
         for(int i=0; i<fileNames.size(); i++){
-            //Read in the client's data
-            ifstream ClientInput("clients/" + fileNames[i]); //input open
-            network::User client;
-            client.ParseFromIstream(&ClientInput);
-            ClientInput.close(); //input close
-            
-            //Copy cleints data to DB field by field (unfortuanitely)
-            User user(client.name());
-            user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
-            user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
-            user.timeline.resize(client.timeline_size());
-            for(int i=0; i<client.timeline_size(); i++){
-                struct Post p;
-                p.name = client.timeline(i).name();
-                p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
-                p.content = client.timeline(i).content();
-                user.timeline.push_back(p);
+            //make sure the file ends in .txt
+            if(has_suffix(fileNames[i], ".txt")){
+                //Read in the client's data
+                ifstream ClientInput("clients/" + fileNames[i]); //input open
+                network::User client;
+                client.ParseFromIstream(&ClientInput);
+                ClientInput.close(); //input close
+                
+                //Copy cleints data to DB field by field (unfortuanitely)
+                User user(client.name());
+                user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
+                user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
+                user.timeline.resize(client.timeline_size());
+                for(int i=0; i<client.timeline_size(); i++){
+                    struct Post p;
+                    p.name = client.timeline(i).name();
+                    p.timestamp = google::protobuf::util::TimeUtil::TimestampToTimeT(client.timeline(i).time());
+                    p.content = client.timeline(i).content();
+                    user.timeline.push_back(p);
+                }
+                UserDB.insert({ client.name(), user});
             }
-            UserDB.insert({ client.name(), user});
         }
     }
     //// END GRPC IMPLEMENTATION
+
+    bool has_suffix(const std::string &str, const std::string &suffix)
+    {
+        return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
+    }
 };
 
 void RunServer(std::string port) {
