@@ -24,6 +24,8 @@ using network::ListRequest;
 using network::ListReply;
 using network::UpdateRequest;
 using network::UpdateReply;
+using network::Post;
+using network::PostReply;
 
 
 class Client : public IClient
@@ -34,15 +36,47 @@ class Client : public IClient
                const std::string& p)
             :hostname(hname), username(uname), port(p)
             {}
+        ~Client() {
+            if (chatUpdateThread.joinable()) {
+                chatUpdateThread.join();
+            }
+        }
         void set_stub(std::string address){
             auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
             stub_ = network::SNS::NewStub(channel);
             //stub_ = std::move(stub);
         }
+        
+        /**
+         * Amount of time to sleep update thread between update RPC calls
+         */
+        const static int UPDATE_SLEEP_MS = 500;
     protected:
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
         virtual void processTimeline();
+
+        /**
+         * Posts to user and follower timeline on server
+         * @param msg Message to post
+         */
+        virtual IReply sendPost(const std::string& msg);
+
+        /**
+         * Requests updates to the timeline from the server and prints if any
+         */
+        virtual void checkForUpdate();
+
+        /**
+         * Calls checkForUpdate() at regular intervals and displays updates to the screen
+         */
+        virtual void updateTimeline();
+
+        /** 
+         Returns proper IStatus from RPC status id
+         * @param statusID RPC id number
+         */
+        virtual IStatus getStatus(const int statusID);
     private:
         std::string hostname;
         std::string username;
@@ -105,26 +139,7 @@ int Client::connectTo()
     connectionReq.set_connectingclient(username);
     replyStatus.grpc_status = stub_->InitConnect(&clientCtx, connectionReq, &serverResponse);
     if (replyStatus.grpc_status.ok()) {
-        switch (serverResponse.ireplyvalue()) {
-        case 0:
-            replyStatus.comm_status = SUCCESS;
-            break;
-        case 1:
-            replyStatus.comm_status = FAILURE_ALREADY_EXISTS;
-            break;
-        case 2:
-            replyStatus.comm_status = FAILURE_NOT_EXISTS;
-            break;
-        case 3:
-            replyStatus.comm_status = FAILURE_INVALID_USERNAME;
-            break;
-        case 4:
-            replyStatus.comm_status = FAILURE_INVALID;
-            break;
-        case 5:
-            replyStatus.comm_status = FAILURE_UNKNOWN;
-            break;
-        }
+        replyStatus.comm_status = getStatus(serverResponse.ireplyvalue());
     }
     else {
         replyStatus.comm_status = FAILURE_UNKNOWN;
@@ -196,26 +211,7 @@ IReply Client::processCommand(std::string& input)
         FollowReply followRep;
         reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
         if (reply.grpc_status.ok()) {
-            switch(followRep.ireplyvalue()){
-            case 0:
-                reply.comm_status = SUCCESS;
-                break;
-            case 1:
-                reply.comm_status = FAILURE_ALREADY_EXISTS;
-                break;
-            case 2:
-                reply.comm_status = FAILURE_NOT_EXISTS;
-                break;
-            case 3:
-                reply.comm_status = FAILURE_INVALID_USERNAME;
-                break;
-            case 4:
-                reply.comm_status = FAILURE_INVALID;
-                break;
-            case 5:
-                reply.comm_status = FAILURE_UNKNOWN;
-                break;
-            }
+            reply.comm_status = getStatus(followRep.ireplyvalue());
         }
         else {
             reply.comm_status = FAILURE_UNKNOWN;
@@ -228,26 +224,7 @@ IReply Client::processCommand(std::string& input)
         UnfollowReply unfollowRep;
         reply.grpc_status = stub_->Unfollow(&clientCtxt, unfollowReq, &unfollowRep);
         if (reply.grpc_status.ok()) {
-            switch(unfollowRep.ireplyvalue()){
-                case 0:
-                    reply.comm_status = SUCCESS;
-                    break;
-                case 1:
-                    reply.comm_status = FAILURE_ALREADY_EXISTS;
-                    break;
-                case 2:
-                    reply.comm_status = FAILURE_NOT_EXISTS;
-                    break;
-                case 3:
-                    reply.comm_status = FAILURE_INVALID_USERNAME;
-                    break;
-                case 4:
-                    reply.comm_status = FAILURE_INVALID;
-                    break;
-                case 5:
-                    reply.comm_status = FAILURE_UNKNOWN;
-                    break;
-            }
+            reply.comm_status = getStatus(unfollowRep.ireplyvalue());
         }
         else {
             reply.comm_status = FAILURE_UNKNOWN;
@@ -282,33 +259,15 @@ IReply Client::processCommand(std::string& input)
             reply.all_users = {listRep.mutable_users()->begin(), listRep.mutable_users()->end()};
             reply.followers = {listRep.mutable_followers()->begin(), listRep.mutable_followers()->end()};
 
-            switch(listRep.ireplyvalue()){
-            case 0:
-                reply.comm_status = SUCCESS;
-                break;
-            case 1:
-                reply.comm_status = FAILURE_ALREADY_EXISTS;
-                break;
-            case 2:
-                reply.comm_status = FAILURE_NOT_EXISTS;
-                break;
-            case 3:
-                reply.comm_status = FAILURE_INVALID_USERNAME;
-                break;
-            case 4:
-                reply.comm_status = FAILURE_INVALID;
-                break;
-            case 5:
-                reply.comm_status = FAILURE_UNKNOWN;
-                break;
-            }
+            reply.comm_status = getStatus(listRep.ireplyvalue());
+            
         }
         else {
             reply.comm_status = FAILURE_UNKNOWN;
         }
         
     }else if(cmd == "TIMELINE"){
-
+        reply.comm_status = SUCCESS;
     }else if(cmd == "DEBUG"){
         UpdateRequest upReq;
         upReq.set_username(username);
@@ -327,6 +286,10 @@ IReply Client::processCommand(std::string& input)
             }
         }
 
+    }else if (cmd == "SEND") {
+        sendPost(argument);
+    }else if (cmd == "UPDATE") {
+        checkForUpdate();
     }else{
         std::cout << "Invalid Command\n";
     }
@@ -352,4 +315,90 @@ void Client::processTimeline()
     // and you can terminate the client program by pressing
     // CTRL-C (SIGINT)
 	// ------------------------------------------------------------
+
+    // Initial update check to get recent posts in timeline
+    checkForUpdate();
+
+    // Spawn update handler thread
+    chatUpdateThread = std::thread(&Client::updateTimeline, this);
+
+    // Get input from user continuously
+    while (true) {
+        const std::string& msg = getPostMessage();
+        const IReply reply = sendPost(msg);
+        if (reply.comm_status != SUCCESS) {
+            std::cerr << "Error posting message" << std::endl;
+
+        }
+    }
+}
+
+IReply Client::sendPost(const std::string& msg)
+{
+    Post post;
+    post.set_name(username);
+    post.set_content(msg);
+    *post.mutable_time() = google::protobuf::util::TimeUtil::GetCurrentTime();
+    PostReply postRep;
+    IReply reply;
+    ClientContext clientCtxt;
+    reply.grpc_status = stub_->SendPost(&clientCtxt, post, &postRep);
+    if (reply.grpc_status.ok()) {
+        reply.comm_status = SUCCESS;
+    }
+    else {
+        reply.comm_status = FAILURE_UNKNOWN;
+    }
+    return reply;
+}
+
+void Client::checkForUpdate()
+{
+    UpdateRequest request;
+    UpdateReply requestReply;
+    ClientContext clientCtxt;
+    request.set_username(username);
+    Status stats = stub_->Update(&clientCtxt, request, &requestReply);
+    if (stats.ok()) {
+        if (requestReply.has_updated()) {
+            for (auto postsIt = requestReply.updated().posts().begin(); postsIt != requestReply.updated().posts().end(); postsIt++) {
+                const std::string& name = postsIt->name();
+                const std::string& msg = postsIt->content();
+                time_t time = google::protobuf::util::TimeUtil::TimestampToTimeT(postsIt->time());
+                displayPostMessage(name, msg, time);
+            }
+        }
+    }
+    else {
+        std::cerr << "Error occurred receiving update" << std::endl;
+    }
+}
+
+void Client::updateTimeline()
+{
+    while (true) {
+        // Get an update
+        checkForUpdate();
+        // Sleep
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+}
+
+IStatus Client::getStatus(const int statusID)
+{
+    switch (statusID) {
+    case 0:
+        return SUCCESS;
+    case 1:
+        return FAILURE_ALREADY_EXISTS;
+    case 2:
+        return FAILURE_NOT_EXISTS;
+    case 3:
+        return FAILURE_INVALID_USERNAME;
+    case 4:
+        return FAILURE_INVALID;
+    case 5:
+        return FAILURE_UNKNOWN;
+    }
+    return FAILURE_UNKNOWN;
 }

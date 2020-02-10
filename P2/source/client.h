@@ -118,7 +118,7 @@ std::string IClient::getCommand() const
 			input = cmd + " " + argument;
 		} else {
 			toUpperCase(input);
-			if (input != "LIST" && input != "TIMELINE" && input != "DEBUG") {
+			if (input != "LIST" && input != "TIMELINE" && input != "DEBUG" && input != "SEND" && input != "UPDATE") {
 				std::cout << "Invalid Command\n";
 				continue;
 			}

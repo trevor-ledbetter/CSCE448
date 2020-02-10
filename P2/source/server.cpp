@@ -47,33 +47,81 @@ using namespace std;
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
-    //// Server Relevant Variables
+    /********************************
+     *
+     * Server Relevant Variables
+     *
+     *******************************/
+public:
+    /* Maximum amount of posts allowed in a user's timeline
+     */
+    static const int MAX_TIMELINE = 20;
+
+private:
+    /* Contains data relevant to posts
+     */
     struct Post {
         string name;
         time_t timestamp;
         string content;
     };
 
+    /* Contains data relevant to users/clients
+     */
     struct User {
         User(const string& name_)
-            : name(name_), clientDataStale(-1) {}
+            : name(name_), clientStaleDataCount(-1) {}
 
         string name;
         deque<Post> timeline;
-        int clientDataStale;
+        /**
+         * Value which determines how much to send in UpdateReply
+         * < 0 => First time update is called, send full timeline
+         * > 0 => Send quantity of posts
+         */
+        int clientStaleDataCount;
         vector<string> following;
         vector<string> followers;
     };
 
+    /* Holds all users with key = username, value = User
+     */
     unordered_map<string, User> UserDB;
 
-    // Add post to user's and follower's timelines and flags data as stale
+    /* Add post to user's and follower's timelines and flags their data as stale
+     * Requires Post& to be added to all timelines
+     */
     void AddUserPost(const Post& post) {
+        User& sender = UserDB.at(post.name);
+        
+        // Add to user's timeline, resizing if too large
+        sender.timeline.push_front(post);
+        if (sender.timeline.size() > MAX_TIMELINE) {
+            sender.timeline.resize(MAX_TIMELINE);
+        }
 
+        // Add to follower's timelines and update stale value
+        for (auto followerIt = sender.followers.begin(); followerIt != sender.followers.end(); followerIt++) {
+            User& currentFollower = UserDB.at(*followerIt);
+            currentFollower.timeline.push_front(post);
+            if (currentFollower.timeline.size() > MAX_TIMELINE) {
+                currentFollower.timeline.resize(MAX_TIMELINE);
+            }
+            if (currentFollower.clientStaleDataCount >= 0 && currentFollower.clientStaleDataCount < 20) {
+                currentFollower.clientStaleDataCount += 1;
+            }
+        }
     }
 
-    //// GRPC IMPLEMENTATION
+    /*****************************
+     *
+     * GRPC IMPLEMENTATION
+     *
+     ****************************/
 
+    /* RPC called on client construction
+     * Handles adding users to database when detected as new 
+     */
     Status InitConnect(ServerContext* context, const ClientConnect* connection, ServerAllow* response) override {
         // Fail by default
         response->set_ireplyvalue(5);
@@ -96,12 +144,16 @@ class SNSImpl final : public SNS::Service {
         }
         else {
             cout << "Not adding duplicate user:\t" << clientName << endl;
+            cout << "\tSetting stale data value to -1" << endl;
+            UserDB.at(clientName).clientStaleDataCount = -1;
             response->set_ireplyvalue(0);
         }
 
         return Status::OK;
     }
 
+    /* RPC called when client wants to follow a user
+     */
     Status Follow(ServerContext* context, const FollowRequest* request, FollowReply* reply) override {
         // Initialize IReplyValue to FAILURE_UNKNOWN by default
         reply->set_ireplyvalue(5);
@@ -114,6 +166,7 @@ class SNSImpl final : public SNS::Service {
         // Check not self
         if (followReq == reqUser) {
             reply->set_ireplyvalue(4);
+            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
 
@@ -122,6 +175,7 @@ class SNSImpl final : public SNS::Service {
         if (dbIt == UserDB.end()) {
             // Reply FAILURE_NOT_EXISTS
             reply->set_ireplyvalue(2);
+            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
 
@@ -155,17 +209,21 @@ class SNSImpl final : public SNS::Service {
             FollowerOutput.close(); //output close
             
             reply->set_ireplyvalue(0);
+            cout << reqUser << " is now following " << followReq << endl;
             return Status::OK;
         }
         else {
             // Reply FAILURE_ALREADY_EXISTS
             reply->set_ireplyvalue(1);
+            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
         
         return Status::CANCELLED;
     }
 
+    /* RPC called when client wants to unfollow a user
+     */
     Status Unfollow(ServerContext* context, const UnfollowRequest* request, UnfollowReply* reply) override {
         // Initialize IReplyValue to FAILURE_UNKNOWN by default
         reply->set_ireplyvalue(5);
@@ -229,17 +287,21 @@ class SNSImpl final : public SNS::Service {
             }
             
             reply->set_ireplyvalue(0);
+            cout << reqUser << " is no longer following " << unfollowReq << endl;
             return Status::OK;
         }
         else {
             // Reply FAILURE_NOT_EXISTS
             reply->set_ireplyvalue(2);
+            cout << reqUser << " failed to unfollow " << unfollowReq << endl;
             return Status::OK;
         }
 
         return Status::CANCELLED;
     }
 
+    /* RPC called when client wants to get a list of all users currently in the database
+     */
     Status List(ServerContext* context, const ListRequest* request, ListReply* reply) override {
         // Initialize IReplyValue to FAILURE_UNKNOWN by default
         reply->set_ireplyvalue(5);
@@ -250,7 +312,7 @@ class SNSImpl final : public SNS::Service {
             reply->add_users(name);
         }
 
-        //Find the DB entry that cooresponds to the requester's username
+        //Find the DB entry that corresponds to the requester's username
         std::string username = request->username();
         auto& requester = UserDB.at(username);
 
@@ -264,20 +326,32 @@ class SNSImpl final : public SNS::Service {
 
         return Status::OK;
     }
-
+    
+    /* RPC called from client timeline mode at regular intervals that requests any updates to the client timeline
+     */
     Status Update(ServerContext* context, const UpdateRequest* request, UpdateReply* reply) override {
-        network::Post* testPost = reply->mutable_updated()->add_posts();
-        testPost->set_name("default");
-        *testPost->mutable_time() = google::protobuf::util::TimeUtil::GetCurrentTime();
-        testPost->set_content("testPost 1");
-
+        // Send necessary posts to the client
+        User& requester = UserDB.at(request->username());
+        int& quantity = requester.clientStaleDataCount;
+        // Make quantity the timeline size if initializing
+        if (quantity == -1) {
+            quantity = requester.timeline.size();
+        }
+        for (auto postIt = requester.timeline.begin(); postIt < requester.timeline.begin() + quantity; postIt++) {
+            network::Post* currPost = reply->mutable_updated()->add_posts();
+            currPost->set_name(postIt->name);
+            currPost->set_content(postIt->content);
+            *currPost->mutable_time() = google::protobuf::util::TimeUtil::TimeTToTimestamp(postIt->timestamp);
+        }
+        cout << "Sending updated timeline to " << requester.name << endl;
+        cout << "\t" << "Number of posts: " << quantity << endl;
+        // Reset stale quantity to 0
+        quantity = 0;
         return Status::OK;
-        
     }
 
-    // Handle client post sending
-    // Returns server Status
-    // Requires ServerContext*, network::Post* (NOT SNSImpl::Post), PostReply*
+    /* RPC called from client timeline mode when user wishes to post
+     */
     Status SendPost(ServerContext* context, const network::Post* postReq, PostReply* postRep) override {
         using namespace google::protobuf;
         // Put data into new SNSImpl::Post
@@ -285,8 +359,14 @@ class SNSImpl final : public SNS::Service {
         inPost.name = postReq->name();
         inPost.timestamp = util::TimeUtil::TimestampToTimeT(postReq->time());
         inPost.content = postReq->content();
-        // Add to correct user timeline and follower's timelines
 
+        cout << "Received Post from " << inPost.name << endl;
+        cout << "\t" << "Time: " << ctime(&inPost.timestamp) << endl;
+        cout << "\t" << "Content: " << inPost.content << endl;
+        // Add to correct user timeline and follower's timelines
+        AddUserPost(inPost);
+
+        postRep->set_ireplyvalue(0);
         return Status::OK;
     }
 
