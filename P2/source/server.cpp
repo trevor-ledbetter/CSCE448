@@ -135,6 +135,7 @@ private:
         // Check not self
         if (followReq == reqUser) {
             reply->set_ireplyvalue(4);
+            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
 
@@ -143,6 +144,7 @@ private:
         if (dbIt == UserDB.end()) {
             // Reply FAILURE_NOT_EXISTS
             reply->set_ireplyvalue(2);
+            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
 
@@ -156,11 +158,13 @@ private:
             // Add to other user's follower's list
             dbIt->second.followers.push_back(reqUser);
             reply->set_ireplyvalue(0);
+            cout << reqUser << " is now following " << followReq << endl;
             return Status::OK;
         }
         else {
             // Reply FAILURE_ALREADY_EXISTS
             reply->set_ireplyvalue(1);
+            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
         
@@ -198,11 +202,13 @@ private:
             }
             
             reply->set_ireplyvalue(0);
+            cout << reqUser << " is no longer following " << unfollowReq << endl;
             return Status::OK;
         }
         else {
             // Reply FAILURE_NOT_EXISTS
             reply->set_ireplyvalue(2);
+            cout << reqUser << " failed to unfollow " << unfollowReq << endl;
             return Status::OK;
         }
 
