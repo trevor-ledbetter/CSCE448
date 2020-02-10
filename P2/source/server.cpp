@@ -172,26 +172,34 @@ private:
         network::User sender;
         sender.ParseFromIstream(&SenderInput);
         SenderInput.close();
-        //network::Post* point = sender.mutable_timeline()->Add();
-        //point = &netPost;
         
         // This is based on the implementation I used in Update() in the for loop at line 416
         network::Post* instancedPost = sender.mutable_timeline()->Add();
         
         // I used swap here since netPost isn't modified after this line, but if it is, you can probably use CopyFrom()
-        instancedPost->Swap(&netPost);
+        instancedPost->CopyFrom(netPost);
         ofstream SenderOutput("clients/" + post.name + ".txt");
         sender.SerializeToOstream(&SenderOutput);
         SenderOutput.close();
         // If you feed in a value with Add() it needs to be an rvalue (tried looking at reference for it, but it's a little confusing)
         // Using std::move() still doesn't work though, and I can't figure out why, so this is just what works for now I guess
         
-        //sender.mutable_timeline()->push_back(netpost);
-        //sender.timeline().Add();
-        //int size = sender.timeline_size();
-
-        //sender.timeline_add(netPost);
-        //sender.timeline()->[size-1] = netPost;
+        for (auto followerIt = sender.mutable_followers()->begin(); followerIt != sender.mutable_followers()->end(); followerIt++) {
+            ifstream FollowerInput("clients/" + *followerIt + ".txt");
+            network::User follower;
+            follower.ParseFromIstream(&FollowerInput);
+            FollowerInput.close();
+            network::Post* followerInstancedPost = follower.mutable_timeline()->Add();
+            //followerInstancedPost->Swap(&netPost);
+            followerInstancedPost->CopyFrom(netPost);
+            int stale = follower.clientdatastale();
+            if (stale >= 0 && stale < 20) {
+                follower.set_clientdatastale(stale+1);
+            }
+            ofstream FollowerOutput("clients/" + *followerIt + ".txt");
+            follower.SerializeToOstream(&FollowerOutput);
+            FollowerOutput.close();
+        }
     }
 
     /*****************************
