@@ -38,12 +38,12 @@ PROTOS_PATH = protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check client server
+all: system-check fbc fbsd
 
-client: network.pb.o network.grpc.pb.o client.o
+fbc: network.pb.o network.grpc.pb.o client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-server: network.pb.o network.grpc.pb.o server.o
+fbsd: network.pb.o network.grpc.pb.o server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 .PRECIOUS: %.grpc.pb.cc
@@ -55,7 +55,7 @@ server: network.pb.o network.grpc.pb.o server.o
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h client server
+	rm -f *.o *.pb.cc *.pb.h fbc fbsd
 
 # This directive will clear the server data cache
 initialize_db:
