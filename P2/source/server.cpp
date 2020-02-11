@@ -119,7 +119,7 @@ private:
      */
     struct User {
         User(const string& name_)
-            : name(name_), clientStaleDataCount(-1) {}
+            : name(name_), clientStaleDataCount(-1), connected(false) {}
 
         string name;
         deque<Post> timeline;
@@ -131,6 +131,7 @@ private:
         int clientStaleDataCount;
         vector<string> following;
         vector<string> followers;
+        bool connected;
     };
 
     /* Holds all users with key = username, value = User
@@ -248,6 +249,11 @@ private:
             File.close();
         }
         else {
+            // Check user is not already connected, reject if connected
+            if (UserDB.at(clientName).connected) {
+                response->set_ireplyvalue(1);
+                return Status::OK;
+            }
             cout << "Not adding duplicate user:\t" << clientName << endl;
             cout << "\tSetting stale data value to -1" << endl;
             UserDB.at(clientName).clientStaleDataCount = -1;
@@ -263,6 +269,9 @@ private:
 
             response->set_ireplyvalue(0);
         }
+
+        // Set User as connected
+        UserDB.at(clientName).connected = true;
 
         return Status::OK;
     }
