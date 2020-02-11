@@ -5,6 +5,7 @@
 #include <ctime>
 #include <string>
 #include <unistd.h>
+#include <signal.h>
 #include <grpc++/grpc++.h>
 #include "client.h"
 #include "network.grpc.pb.h"
@@ -27,6 +28,15 @@ using network::UpdateReply;
 using network::Post;
 using network::PostReply;
 
+/**
+* Amount of time to sleep update thread between update RPC calls
+*/
+const int UPDATE_SLEEP_MS = 500;
+
+volatile sig_atomic_t receivedSignal;
+void setSignal(int sig) {
+    receivedSignal = sig;
+}
 
 class Client : public IClient
 {
@@ -35,7 +45,8 @@ class Client : public IClient
                const std::string& uname,
                const std::string& p)
             :hostname(hname), username(uname), port(p)
-            {}
+            {
+            }
         ~Client() {
             if (chatUpdateThread.joinable()) {
                 chatUpdateThread.join();
@@ -47,10 +58,6 @@ class Client : public IClient
             //stub_ = std::move(stub);
         }
         
-        /**
-         * Amount of time to sleep update thread between update RPC calls
-         */
-        const static int UPDATE_SLEEP_MS = 500;
     protected:
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
@@ -72,6 +79,11 @@ class Client : public IClient
          */
         virtual void updateTimeline();
 
+        /**
+         * Handles termination signals and disconnects from server
+         */
+        virtual void handleDisconnect();
+
         /** 
          Returns proper IStatus from RPC status id
          * @param statusID RPC id number
@@ -88,6 +100,8 @@ class Client : public IClient
         std::unique_ptr<SNS::Stub> stub_;
 
         std::thread chatUpdateThread;
+        std::thread signalCheckingThread;
+
 };
 
 int main(int argc, char** argv) {
@@ -108,6 +122,10 @@ int main(int argc, char** argv) {
                 std::cerr << "Invalid Command Line Argument\n";
         }
     }
+
+    signal(SIGINT, setSignal);
+    signal(SIGTERM, setSignal);
+    signal(SIGKILL, setSignal);
 
     Client myc(hostname, username, port);
     // You MUST invoke "run_client" function to start business logic
@@ -145,7 +163,11 @@ int Client::connectTo()
         replyStatus.comm_status = FAILURE_UNKNOWN;
     }
 
-    if (replyStatus.comm_status == SUCCESS) return 1;
+    if (replyStatus.comm_status == SUCCESS) {
+        signalCheckingThread = std::thread(&Client::handleDisconnect, this);
+        
+        return 1;
+    }
     else return -1; // return 1 if success, otherwise return -1
 }
 
@@ -363,7 +385,29 @@ void Client::updateTimeline()
         // Get an update
         checkForUpdate();
         // Sleep
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SLEEP_MS));
+    }
+}
+
+void Client::handleDisconnect()
+{
+    while (true) {
+        if (receivedSignal == SIGTERM || receivedSignal == SIGKILL || receivedSignal == SIGINT) {
+			ClientContext clientCtx;
+			ClientConnect connectReq;
+			connectReq.set_connectingclient(username);
+			ServerAllow serverRes;
+			grpc::Status reply;
+			reply = stub_->Disconnect(&clientCtx, connectReq, &serverRes);
+			if (reply.ok()) {
+				std::cout << "Disconnected successfully" << std::endl;
+			}
+			else {
+				std::cout << "Failed to disconnect from server" << std::endl;
+			}
+			exit(0);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(UPDATE_SLEEP_MS));
     }
 }
 

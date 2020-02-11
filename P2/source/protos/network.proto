@@ -16,6 +16,7 @@ import "google/protobuf/timestamp.proto";
 
 service SNS{
     rpc InitConnect (ClientConnect) returns (ServerAllow) {}
+    rpc Disconnect (ClientConnect) returns (ServerAllow) {}
     rpc Follow (FollowRequest) returns (FollowReply) {}
     rpc Unfollow (UnfollowRequest) returns (UnfollowReply) {}
     rpc List (ListRequest) returns (ListReply) {}

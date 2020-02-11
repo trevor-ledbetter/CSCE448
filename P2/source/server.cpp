@@ -514,6 +514,13 @@ private:
         std::cout << "Timestamped out: " << util::TimeUtil::ToString(tStamp) << std::endl;
         return Status::OK;
     }
+
+    Status Disconnect(ServerContext* context, const ClientConnect* request, ServerAllow* response) {
+        const string& username = request->connectingclient();
+        UserDB.at(username).connected = false;
+        response->set_ireplyvalue(0);
+        return Status::OK;
+    }
     
     bool has_suffix(const std::string &str, const std::string &suffix)
     {
