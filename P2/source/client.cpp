@@ -51,6 +51,7 @@ class Client : public IClient
             if (chatUpdateThread.joinable()) {
                 chatUpdateThread.join();
             }
+            receivedSignal = SIGINT;
         }
         void set_stub(std::string address){
             auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
