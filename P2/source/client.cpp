@@ -109,18 +109,28 @@ int main(int argc, char** argv) {
     std::string hostname = "localhost";
     std::string username = "default";
     std::string port = "5116";
-    int opt = 0;
-    while ((opt = getopt(argc, argv, "h:u:p:")) != -1){
-        switch(opt) {
-            case 'h':
-                hostname = optarg;break;
-            case 'u':
-                username = optarg;break;
-            case 'p':
-                port = optarg;break;
-            default:
-                std::cerr << "Invalid Command Line Argument\n";
-        }
+    //int opt = 0;
+    //while ((opt = getopt(argc, argv, "h:u:p:")) != -1){
+    //    switch(opt) {
+    //        case 'h':
+    //            hostname = optarg;break;
+    //        case 'u':
+    //            username = optarg;break;
+    //        case 'p':
+    //            port = optarg;break;
+    //        default:
+    //            std::cerr << "Invalid Command Line Argument\n";
+    //    }
+    //}
+
+    if (argc != 4) {
+        fprintf(stderr, "usage: ./fbc <hostname> <port> <username>\n");
+        return 1;
+    }
+    else {
+        hostname = std::string(argv[1]);
+        port = std::string(argv[2]);
+        username = std::string(argv[3]);
     }
 
     signal(SIGINT, setSignal);

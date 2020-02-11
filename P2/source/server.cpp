@@ -533,14 +533,21 @@ void RunServer(std::string port) {
 
 int main(int argc, char** argv) {
     std::string port = "5116";
-    int opt = 0;
-    while ((opt = getopt(argc, argv, "p:")) != -1){
-        switch(opt) {
-            case 'p':
-                port = optarg;break;
-            default:
-                std::cerr << "Invalid Command Line Argument\n";
-        }
+    //int opt = 0;
+    //while ((opt = getopt(argc, argv, "p:")) != -1){
+    //    switch(opt) {
+    //        case 'p':
+    //            port = optarg;break;
+    //        default:
+    //            std::cerr << "Invalid Command Line Argument\n";
+    //    }
+    //}
+    if (argc != 2) {
+        fprintf(stderr, "usage: ./fbsd <port number>\n");
+        return 1;
+    }
+    else {
+        port = std::string(argv[1]);
     }
     RunServer(port);
 
