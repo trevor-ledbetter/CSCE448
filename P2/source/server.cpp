@@ -289,7 +289,7 @@ private:
         // Find specified user, and add if not already in follow list
         // Check not self
         if (followReq == reqUser) {
-            reply->set_ireplyvalue(4);
+            reply->set_ireplyvalue(1);
             cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
@@ -298,7 +298,7 @@ private:
         auto dbIt = UserDB.find(followReq);
         if (dbIt == UserDB.end()) {
             // Reply FAILURE_NOT_EXISTS
-            reply->set_ireplyvalue(2);
+            reply->set_ireplyvalue(3);
             cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
@@ -416,7 +416,7 @@ private:
         }
         else {
             // Reply FAILURE_NOT_EXISTS
-            reply->set_ireplyvalue(2);
+            reply->set_ireplyvalue(3);
             cout << reqUser << " failed to unfollow " << unfollowReq << endl;
             return Status::OK;
         }
