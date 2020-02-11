@@ -400,10 +400,8 @@ void Client::handleDisconnect()
 			grpc::Status reply;
 			reply = stub_->Disconnect(&clientCtx, connectReq, &serverRes);
 			if (reply.ok()) {
-				std::cout << "Disconnected successfully" << std::endl;
 			}
 			else {
-				std::cout << "Failed to disconnect from server" << std::endl;
 			}
 			exit(0);
         }

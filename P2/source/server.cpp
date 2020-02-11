@@ -91,9 +91,7 @@ public:
                 User user(client.name());
                 user.following = {client.mutable_following()->begin(), client.mutable_following()->end()};
                 user.followers = {client.mutable_followers()->begin(), client.mutable_followers()->end()};
-                //user.timeline.resize(client.timeline_size());
                 user.clientStaleDataCount = client.clientdatastale();
-                //std::cout << "timeline size: " << client.timeline_size() << std::endl;
                 for(int i=0; i<client.timeline_size(); i++){
                     struct Post p;
                     p.name = client.timeline(i).name();
@@ -237,7 +235,6 @@ private:
         auto connector = UserDB.find(clientName);
         if (connector == UserDB.end()) {
             UserDB.insert({ clientName, User(clientName) });
-            cout << "Adding user:\t" << clientName << endl;
             response->set_ireplyvalue(0);
 
             //create a file with the client's username and place an empty User message in it
@@ -254,8 +251,6 @@ private:
                 response->set_ireplyvalue(1);
                 return Status::OK;
             }
-            cout << "Not adding duplicate user:\t" << clientName << endl;
-            cout << "\tSetting stale data value to -1" << endl;
             UserDB.at(clientName).clientStaleDataCount = -1;
 
             ifstream inputFile("clients/" + clientName + ".txt");
@@ -290,7 +285,6 @@ private:
         // Check not self
         if (followReq == reqUser) {
             reply->set_ireplyvalue(1);
-            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
 
@@ -299,7 +293,6 @@ private:
         if (dbIt == UserDB.end()) {
             // Reply FAILURE_NOT_EXISTS
             reply->set_ireplyvalue(3);
-            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
 
@@ -333,13 +326,11 @@ private:
             FollowerOutput.close(); //output close
             
             reply->set_ireplyvalue(0);
-            cout << reqUser << " is now following " << followReq << endl;
             return Status::OK;
         }
         else {
             // Reply FAILURE_ALREADY_EXISTS
             reply->set_ireplyvalue(1);
-            cout << reqUser << " failed to follow " << followReq << endl;
             return Status::OK;
         }
         
@@ -411,13 +402,11 @@ private:
             }
             
             reply->set_ireplyvalue(0);
-            cout << reqUser << " is no longer following " << unfollowReq << endl;
             return Status::OK;
         }
         else {
             // Reply FAILURE_NOT_EXISTS
             reply->set_ireplyvalue(3);
-            cout << reqUser << " failed to unfollow " << unfollowReq << endl;
             return Status::OK;
         }
 
@@ -476,8 +465,6 @@ private:
             currPost->set_content(postIt->content);
             *currPost->mutable_time() = google::protobuf::util::TimeUtil::TimeTToTimestamp(postIt->timestamp);
         }
-        cout << "Sending updated timeline to " << requester.name << endl;
-        cout << "\t" << "Number of posts: " << quantity << endl;
         // Reset stale quantity to 0
         quantity = 0;
         setStaleFile(request->username(), 0);
@@ -494,9 +481,6 @@ private:
         inPost.timestamp = util::TimeUtil::TimestampToTimeT(postReq->time());
         inPost.content = postReq->content();
 
-        cout << "Received Post from " << inPost.name << endl;
-        cout << "\t" << "Time: " << ctime(&inPost.timestamp) << endl;
-        cout << "\t" << "Content: " << inPost.content << endl;
         // Add to correct user timeline and follower's timelines
         AddUserPost(inPost);
         AddUserPostFile(inPost);
