@@ -1,17 +1,13 @@
+# CSCE 438 Homework 2
+SNS Implementation with gRPC and Protocol Buffers v3
 
-Compile the code using the provided makefile:
+## Design
+The project design orients around the RPC and Protocol Buffer design, client implementation, and server implementation. In the end a tiny SNS will be developed.
 
-    make
+### Remote Procedure Calls
 
-To clear the directory (and remove .txt files):
-   
-    make clean
+### Protocol Buffers
 
-To run the server on port 3010:
+### Client Implementation
 
-    ./tsd -p 3010
-
-To run the client  
-
-    ./tsc -h host_addr -p 3010 -u user1
-
+### Server Implementation
