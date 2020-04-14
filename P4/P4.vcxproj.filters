@@ -40,5 +40,6 @@
     <None Include="source\protos\network.proto">
       <Filter>Protocol Buffer Files</Filter>
     </None>
+    <None Include="source\Makefile" />
   </ItemGroup>
 </Project>

@@ -37,7 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{d9ffa4c7-074a-436f-889b-7aa81ab18841}</ProjectGuid>
     <Keyword>Linux</Keyword>
-    <RootNamespace>P2</RootNamespace>
+    <RootNamespace>P4</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
     <ApplicationType>Linux</ApplicationType>
     <ApplicationTypeRevision>1.0</ApplicationTypeRevision>
