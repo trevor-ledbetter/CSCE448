@@ -35,11 +35,11 @@ using namespace std;
 
 
 struct masterServer{
-    std::string ip;
+    std::string hostname;
     std::string port;
 
     bool operator==(const masterServer& a) const{
-        return (ip == a.ip && port == a.port);
+        return (hostname == a.hostname && port == a.port);
     }
 };
 
@@ -67,17 +67,19 @@ public:
         if(server_list.size() == 0){
             //No available servers
             response->set_ireplyvalue(5);
+            return grpc::Status(grpc::StatusCode::UNAVAILABLE, "Unavailable Server");
         }else{
-            response->set_ip(available_server.ip);
+            response->set_hostname(available_server.hostname);
             response->set_port(available_server.port);
             response->set_ireplyvalue(0);
+            return Status::OK;
         }
-        return Status::OK;
     }
 
     Status RegisterServer(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
+        std::cout << "registering yo motherfuckah!\n";
         masterServer new_server;
-        new_server.ip = server_info->ip();
+        new_server.hostname = server_info->hostname();
         new_server.port = server_info->port();
         
         //Add new_server to the list
@@ -85,7 +87,7 @@ public:
 
         //if this is the first and/or only server make it the available one
         if(server_list.size() == 1){
-            available_server.ip = server_list[0].ip;
+            available_server.hostname = server_list[0].hostname;
             available_server.port = server_list[0].port;
         }
 
@@ -95,7 +97,7 @@ public:
 
     Status Crash(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
         masterServer crashed_server;
-        crashed_server.ip = server_info->ip();
+        crashed_server.hostname = server_info->hostname();
         crashed_server.port = server_info->port();
 
         //Remove server_info from server_list
@@ -110,7 +112,7 @@ public:
         if(crashed_server == available_server){
             //make sure there are available servers
             if(server_list.size() > 0){
-                available_server.ip = server_list[0].ip;
+                available_server.hostname = server_list[0].hostname;
                 available_server.port = server_list[0].port;
             }else{
                 std::cout << "Error: No available servers!\n";

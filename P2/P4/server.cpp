@@ -25,6 +25,8 @@ using grpc::Server;
 using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
+using grpc::ClientContext;
+using grpc::Channel;
 
 using network::SNS;
 using network::ClientConnect;
@@ -42,6 +44,9 @@ using network::ListRequest;
 using network::UpdateRequest;
 using network::UpdateReply;
 using network::PostReply;
+using network::KeepAliveReply;
+using network::KeepAliveRequest;
+using network::ServerInfo;
 
 using namespace std;
 
@@ -53,6 +58,15 @@ class SNSImpl final : public SNS::Service {
      *
      *******************************/
 public:
+    //stub for communication with routing server
+    std::unique_ptr<SNS::Stub> stub_;
+
+    void set_stub(std::string address){
+        auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
+        stub_ = network::SNS::NewStub(channel);
+        //stub_ = std::move(stub);
+    }
+
     /* Maximum amount of posts allowed in a user's timeline
      */
     static const int MAX_TIMELINE = 20;
@@ -103,6 +117,23 @@ public:
                 UserDB.insert({ client.name(), user});
             }
         }
+    }
+
+    void Register(string address){
+        std::cout << "print here?\n";
+        set_stub("localhost:5115");
+        
+        ClientContext context;
+        ServerInfo info;
+        KeepAliveReply reply;
+        IReply replyStatus;
+
+        info.set_ireplyvalue(0);
+        info.set_hostname("localhost");
+        info.set_port("5116");
+
+        replyStatus.grpc_status = stub_->RegisterServer(&context, info, &reply);
+        return;
     }
 private:
     /* Contains data relevant to posts
@@ -510,9 +541,16 @@ private:
     {
         return str.size() >= suffix.size() && str.compare(str.size() - suffix.size(), suffix.size(), suffix) == 0;
     }
+
+    //Keep alive message between master server and slave server
+    Status KeepAlive(ServerContext* context, const KeepAliveRequest* request, KeepAliveReply* reply) override {
+        reply->set_ireplyvalue(0);
+        return Status::OK;
+    }
+
 }; //// END GRPC IMPLEMENTATION
 
-void RunServer(std::string port) {
+void RunServer(std::string port, std::string routing_port) {
     std::string server_address("0.0.0.0:" + port);
     SNSImpl service;
     service.populateDB();
@@ -527,12 +565,13 @@ void RunServer(std::string port) {
     std::cout << "Server listening on " << server_address << std::endl;
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
-
+    service.Register("localhost:" + routing_port);
     server->Wait();
 }
 
 int main(int argc, char** argv) {
     std::string port = "5116";
+    std::string routing_port = "5115";
     //int opt = 0;
     //while ((opt = getopt(argc, argv, "p:")) != -1){
     //    switch(opt) {
@@ -542,14 +581,15 @@ int main(int argc, char** argv) {
     //            std::cerr << "Invalid Command Line Argument\n";
     //    }
     //}
-    if (argc != 2) {
-        fprintf(stderr, "usage: ./fbsd <port number>\n");
+    if (argc != 3) {
+        fprintf(stderr, "usage: ./fbsd <port number> <routing port number>\n");
         return 1;
     }
     else {
         port = std::string(argv[1]);
+        routing_port = std::string(argv[2]);
     }
-    RunServer(port);
+    RunServer(port, routing_port);
 
     return 0;
 };

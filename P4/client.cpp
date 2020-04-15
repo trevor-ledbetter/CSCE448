@@ -28,6 +28,12 @@ using network::UpdateReply;
 using network::Post;
 using network::PostReply;
 
+using network::ServerInfo;
+using network::KeepAliveReply;
+
+
+
+
 /**
 * Amount of time to sleep update thread between update RPC calls
 */
@@ -43,8 +49,8 @@ class Client : public IClient
     public:
         Client(const std::string& hname,
                const std::string& uname,
-               const std::string& p)
-            :hostname(hname), username(uname), port(p) {}
+               const std::string& rp)
+            :hostname(hname), username(uname), routing_port(rp) {}
         ~Client() {
             if (chatUpdateThread.joinable()) {
                 chatUpdateThread.join();
@@ -92,6 +98,7 @@ class Client : public IClient
         std::string hostname;
         std::string username;
         std::string port;
+        std::string routing_port;
         
         // You can have an instance of the client stub
         // as a member variable.
@@ -100,6 +107,7 @@ class Client : public IClient
 
         std::thread chatUpdateThread;
         std::thread signalCheckingThread;
+        int getServer();
 
 };
 
@@ -107,7 +115,8 @@ int main(int argc, char** argv) {
 
     std::string hostname = "localhost";
     std::string username = "default";
-    std::string port = "5116";
+    std::string routing_port = "5116";
+
     //int opt = 0;
     //while ((opt = getopt(argc, argv, "h:u:p:")) != -1){
     //    switch(opt) {
@@ -123,12 +132,12 @@ int main(int argc, char** argv) {
     //}
 
     if (argc != 4) {
-        fprintf(stderr, "usage: ./fbc <hostname> <port> <username>\n");
+        fprintf(stderr, "usage: ./fbc <hostname> <routing_port> <username>\n");
         return 1;
     }
     else {
         hostname = std::string(argv[1]);
-        port = std::string(argv[2]);
+        routing_port = std::string(argv[2]);
         username = std::string(argv[3]);
     }
 
@@ -136,12 +145,36 @@ int main(int argc, char** argv) {
     signal(SIGTERM, setSignal);
     signal(SIGKILL, setSignal);
 
-    Client myc(hostname, username, port);
+    Client myc(hostname, username, routing_port);
     // You MUST invoke "run_client" function to start business logic
     myc.run_client();
 
     return 0;
 }
+
+int Client::getServer(){
+    //use the routing server to get the port of an available server
+    std::cout << "begin get server\n";
+    std::string address = this->hostname + ":" + this->routing_port;
+    set_stub(address); //sets Client's stub with a channel created with address
+
+    ClientContext clientCtx;
+    ClientConnect connectionReq;
+    ServerInfo info;
+    IReply replyStatus;
+
+    connectionReq.set_connectingclient(username);
+    replyStatus.grpc_status = stub_->Connect(&clientCtx, connectionReq, &info);
+    if (replyStatus.grpc_status.ok()) {
+        this->port = info.port();
+        return 1;
+    }
+    else {
+        replyStatus.comm_status = FAILURE_UNKNOWN;
+        return -1;
+    }
+}
+
 
 int Client::connectTo()
 {
@@ -155,9 +188,18 @@ int Client::connectTo()
     // Please refer to gRpc tutorial how to create a stub.
 	// ------------------------------------------------------------
     
+    //use the routing server to get the port of an available server
+    int get_server_status = getServer();
+    if(get_server_status==-1){
+        std::cout << "yo yo yo chang\n";
+        return -1;
+    }
+
     std::string address = this->hostname + ":" + this->port;
-    set_stub(address); //sets Client's stub with a channel created with address
-    
+    //Reset the stub with the available server's port
+    set_stub(address);
+        std::cout << "hi\n";
+
     ClientContext clientCtx;
     ClientConnect connectionReq;
     ServerAllow serverResponse;
@@ -170,15 +212,16 @@ int Client::connectTo()
     }
     else {
         replyStatus.comm_status = FAILURE_UNKNOWN;
-        DEPLN("Failed to Init Connect");
     }
 
     if (replyStatus.comm_status == SUCCESS) {
         signalCheckingThread = std::thread(&Client::handleDisconnect, this);
-        DIPLN("Successfully ran Init Connect");
+        
         return 1;
+    }else{
+        std::cout << "hoe\n";
+        return -1; // return 1 if success, otherwise return -1
     }
-    else return -1; // return 1 if success, otherwise return -1
 }
 
 IReply Client::processCommand(std::string& input)
@@ -266,6 +309,14 @@ IReply Client::processCommand(std::string& input)
         ListRequest listReq;
         listReq.set_username(username);
         ListReply listRep;
+        
+        /*reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
+        while( !reply.grpc_status.ok() ){
+            //get a new available server from the routing server
+            connectTo();
+            reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
+        }*/
+        
         reply.grpc_status = stub_->List(&clientCtxt, listReq, &listRep);
         if (reply.grpc_status.ok()) {
             //Copy names from the ListReply to the IReply, which is returned
@@ -276,7 +327,6 @@ IReply Client::processCommand(std::string& input)
         else {
             reply.comm_status = FAILURE_UNKNOWN;
         }
-        
     }else if(cmd == "TIMELINE"){
         reply.comm_status = SUCCESS;
 
@@ -437,13 +487,3 @@ IStatus Client::getStatus(const int statusID)
     }
     return FAILURE_UNKNOWN;
 }
-
-
-
-
-/*reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
-while( !reply.grpc_status.ok() ){
-    //get a new available server from the routing server
-    connectTo();
-    reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
-}*/

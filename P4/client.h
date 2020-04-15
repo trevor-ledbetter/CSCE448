@@ -1,5 +1,4 @@
 #include <iostream>
-#include <sstream>
 #include <string>
 #include <ctime>
 #include <vector>
@@ -16,23 +15,6 @@ enum IStatus
     FAILURE_INVALID,
     FAILURE_UNKNOWN
 };
-
-// Debug and Logging macros
-#ifdef DEBUG
-    #define DEP(x) do { std::cerr << "\033[1;4;31m[ERROR]:\033[0m " << x; } while(0)
-    #define DEPLN(x) do { std::cerr << "\033[1;4;31m[ERROR]:\033[0m " << x << "\n"; } while(0)
-    #define DDP(x) do { std::cout << "\033[1;4;36m[DEBUG]:\033[0m " << x; } while(0)
-    #define DDPLN(x) do { std::cout << "\033[1;4;36m[DEBUG]:\033[0m " << x << std::endl; } while(0)
-    #define DIP(x) do { std::cout << "\033[1;4;33m[INFO]:\033[0m " << x; } while(0)
-    #define DIPLN(x) do { std::cout << "\033[1;4;33m[INFO]:\033[0m " << x << std::endl; } while(0)
-#else
-    #define DEP(x) do { } while(0)
-    #define DEPLN(x) do { } while(0)
-    #define DDP(x) do { } while(0)
-    #define DDPLN(x) do { } while(0)
-    #define DIP(x) do { } while(0)
-    #define DIPLN(x) do { } while(0)
-#endif // DEBUG
 
 /*
  * IReply structure is designed to be used for displaying the
@@ -76,7 +58,6 @@ class IClient
         virtual int connectTo() = 0;
         virtual IReply processCommand(std::string& cmd) = 0;
         virtual void processTimeline() = 0;
-
     private:
 
         void run();

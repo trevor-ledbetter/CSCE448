@@ -58,7 +58,6 @@ class IClient
         virtual int connectTo() = 0;
         virtual IReply processCommand(std::string& cmd) = 0;
         virtual void processTimeline() = 0;
-
     private:
 
         void run();

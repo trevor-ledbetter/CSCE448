@@ -29,15 +29,6 @@ LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
            -ldl
 endif
-
-# Debug Handler
-DEBUG ?= 0
-ifeq ($(DEBUG), 1)
-	CXXFLAGS += -DDEBUG
-else
-	CXXFLAGS += -DNDEBUG
-endif
-
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
@@ -47,15 +38,18 @@ PROTOS_PATH = protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check fbc fbsd fbrs
+all: system-check fbc fbrs fbsd  fbss
 
 fbc: network.pb.o network.grpc.pb.o client.o
+	$(CXX) $^ $(LDFLAGS) -o $@
+
+fbrs: network.pb.o network.grpc.pb.o routing_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 fbsd: network.pb.o network.grpc.pb.o server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-fbrs: network.pb.o network.grpc.pb.o routing_server.o
+fbss: network.pb.o network.grpc.pb.o slave_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 .PRECIOUS: %.grpc.pb.cc
@@ -67,7 +61,7 @@ fbrs: network.pb.o network.grpc.pb.o routing_server.o
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h fbc fbsd fbrs
+	rm -f *.o *.pb.cc *.pb.h fbc fbrs fbsd  fbss
 
 # This directive will clear the server data cache
 initialize_db:

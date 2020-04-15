@@ -138,6 +138,6 @@ message KeepAliveReply{
 
 message ServerInfo{
     int32 IReplyValue = 1;
-    string ip = 2;
+    string hostname = 2;
     string port = 3;
 }
