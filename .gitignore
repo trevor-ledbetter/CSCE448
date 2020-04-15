@@ -473,3 +473,6 @@ MigrationBackup/
 ### Executables
 server
 client
+
+### Visual Studio Project Folders
+vsproj/
