@@ -29,6 +29,15 @@ LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
            -ldl
 endif
+
+# Debug Handler
+DEBUG ?= 0
+ifeq ($(DEBUG), 1)
+	CXXFLAGS += -DDEBUG
+else
+	CXXFLAGS += -DNDEBUG
+endif
+
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
