@@ -170,11 +170,12 @@ int Client::connectTo()
     }
     else {
         replyStatus.comm_status = FAILURE_UNKNOWN;
+        DEPLN("Failed to Init Connect");
     }
 
     if (replyStatus.comm_status == SUCCESS) {
         signalCheckingThread = std::thread(&Client::handleDisconnect, this);
-        
+        DIPLN("Successfully ran Init Connect");
         return 1;
     }
     else return -1; // return 1 if success, otherwise return -1

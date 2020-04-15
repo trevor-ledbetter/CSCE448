@@ -44,9 +44,7 @@ class Client : public IClient
         Client(const std::string& hname,
                const std::string& uname,
                const std::string& p)
-            :hostname(hname), username(uname), port(p)
-            {
-            }
+            :hostname(hname), username(uname), port(p) {}
         ~Client() {
             if (chatUpdateThread.joinable()) {
                 chatUpdateThread.join();
@@ -439,3 +437,13 @@ IStatus Client::getStatus(const int statusID)
     }
     return FAILURE_UNKNOWN;
 }
+
+
+
+
+/*reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
+while( !reply.grpc_status.ok() ){
+    //get a new available server from the routing server
+    connectTo();
+    reply.grpc_status = stub_->Follow(&clientCtxt, followReq, &followRep);
+}*/

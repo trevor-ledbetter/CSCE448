@@ -216,3 +216,7 @@ void displayPostMessage(const std::string& sender, const std::string& message, s
     t_str[t_str.size()-1] = '\0';
     std::cout << sender << "(" << t_str << ") >> " << message << std::endl;
 }
+
+void displayReConnectionMessage(const std::string& host, const std::string & port) {
+    std::cout << "Reconnecting to " << host << ":" << port << "..." << std::endl;
+}

@@ -23,7 +23,20 @@ service SNS{
     rpc Update (UpdateRequest) returns (UpdateReply) {}
     rpc SendPost (Post) returns (PostReply) {}
     rpc ExecDebug (DebugRequest) returns (DebugReply) {}
-} //end SNS
+
+    //client sends to routing server, reply is the available server's IP/PORT
+    rpc Connect (ClientConnect) returns (ServerInfo) {}
+
+    //sent between master and slave servers
+    rpc KeepAlive (KeepAliveRequest) returns (KeepAliveReply) {}
+
+    //when a server starts up it will register with the router as an available server
+    rpc RegisterServer (ServerInfo) returns (KeepAliveReply) {}
+    
+    //sent from slave to routing server notifying router that the master server has crashed
+    //also the master server is unregistered with the router
+    rpc Crash (ServerInfo) returns (KeepAliveReply) {}
+} 
 
 message ClientConnect {
     string connectingClient = 1;
@@ -113,4 +126,18 @@ message User{
     int32 clientDataStale = 3;
     repeated string following = 4;
     repeated string followers = 5;
+}
+
+message KeepAliveRequest{
+    int32 IReplyValue = 1;
+}
+
+message KeepAliveReply{
+    int32 IReplyValue = 1;
+}
+
+message ServerInfo{
+    int32 IReplyValue = 1;
+    string ip = 2;
+    string port = 3;
 }
