@@ -37,6 +37,10 @@ using namespace std;
 struct masterServer{
     std::string ip;
     std::string port;
+
+    bool operator==(const masterServer& a) const{
+        return (ip == a.ip && port == a.port);
+    }
 };
 
 // Logic and data behind the server's behavior.
@@ -60,24 +64,61 @@ public:
      ****************************/
 
     Status Connect(ServerContext* context, const ClientConnect* connection, ServerInfo* response) override {
-        //Fail by default
-        response->set_ireplyvalue(5);
-        
-        response->set_ip(available_server.ip);
-        response->set_port(available_server.port);
+        if(server_list.size() == 0){
+            //No available servers
+            response->set_ireplyvalue(5);
+        }else{
+            response->set_ip(available_server.ip);
+            response->set_port(available_server.port);
+            response->set_ireplyvalue(0);
+        }
+        return Status::OK;
+    }
 
+    Status RegisterServer(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
+        masterServer new_server;
+        new_server.ip = server_info->ip();
+        new_server.port = server_info->port();
+        
+        //Add new_server to the list
+        server_list.push_back(new_server);
+
+        //if this is the first and/or only server make it the available one
+        if(server_list.size() == 1){
+            available_server.ip = server_list[0].ip;
+            available_server.port = server_list[0].port;
+        }
+
+        response->set_ireplyvalue(0);
         return Status::OK;
     }
 
     Status Crash(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
-        
+        masterServer crashed_server;
+        crashed_server.ip = server_info->ip();
+        crashed_server.port = server_info->port();
+
         //Remove server_info from server_list
+        for(int i=0; i<server_list.size(); i++){
+            if(server_list[i] == crashed_server){
+                server_list.erase(server_list.begin() + i);
+                break;
+            }
+        }
 
         //if server_info was the available server, choose a new available server
-
+        if(crashed_server == available_server){
+            //make sure there are available servers
+            if(server_list.size() > 0){
+                available_server.ip = server_list[0].ip;
+                available_server.port = server_list[0].port;
+            }else{
+                std::cout << "Error: No available servers!\n";
+                for(;;);
+            }
+        }
         //simple response
         response->set_ireplyvalue(0);
-
         return Status::OK;
     }
 }; //End grpc implementation
