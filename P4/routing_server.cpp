@@ -96,6 +96,7 @@ public:
     }
 
     Status Crash(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
+        std::cout << "Crash!\n";
         masterServer crashed_server;
         crashed_server.hostname = server_info->hostname();
         crashed_server.port = server_info->port();
@@ -115,8 +116,8 @@ public:
                 available_server.hostname = server_list[0].hostname;
                 available_server.port = server_list[0].port;
             }else{
-                std::cout << "Error: No available servers!\n";
-                for(;;);
+                std::cout << "Currently no available servers, please wait...\n";
+                //for(;;);
             }
         }
         //simple response
@@ -156,7 +157,7 @@ int main(int argc, char** argv) {
     //    }
     //}
     if (argc != 2) {
-        fprintf(stderr, "usage: ./fbsd <port number>\n");
+        fprintf(stderr, "usage: ./fbrs <port number>\n");
         return 1;
     }
     else {

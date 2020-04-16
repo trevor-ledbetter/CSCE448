@@ -1,17 +1,19 @@
 #include <iostream>
-#include <memory>
 #include <string>
 #include <thread>
 #include <chrono>
-#include <vector>
-#include <unordered_map>
-#include <algorithm>
 #include <functional>
-#include <queue>
 #include <fstream>
 #include <sys/types.h>
 #include <dirent.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <stdio.h>
+
+#include <sys/wait.h>
+#include <fcntl.h>
+
+
 
 #include <unistd.h>
 #include <grpc++/grpc++.h>
@@ -21,59 +23,114 @@
 #include <google/protobuf/message_lite.h>
 #include <google/protobuf/message.h>
 
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerContext;
+using grpc::ClientContext;
 using grpc::Status;
 
 using network::SNS;
-using network::ClientConnect;
-using network::ServerInfo;
 using network::KeepAliveReply;
 using network::KeepAliveRequest;
+using network::ServerInfo;
 
 
 using namespace std;
 
-void RunSlave(std::string port) {
-    std::string router_address("0.0.0.0:" + port);
-    /*RoutingServer service;
-    ServerBuilder builder;
-    // Listen on the given address without any authentication mechanism.
-    builder.AddListeningPort(router_address, grpc::InsecureServerCredentials());
-    // Register "service" as the instance through which we'll communicate with
-    // clients. In this case it corresponds to an *synchronous* service.
-    builder.RegisterService(&service);
-    // Finally assemble the server.
-    std::unique_ptr<Server> server(builder.BuildAndStart());
-    std::cout << "Router listening on " << router_address << std::endl;
-    // Wait for the server to shutdown. Note that some other thread must be
-    // responsible for shutting down the server for this call to ever return.
+class Slave{
+    private:
+        std::string master_port;
+        std::string routing_port;
 
-    server->Wait();*/
-}
+        std::unique_ptr<SNS::Stub> master_stub_;
+        std::unique_ptr<SNS::Stub> routing_stub_;
+
+        void set_stub(std::unique_ptr<SNS::Stub> &stub_, std::string address){
+            auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
+            stub_ = network::SNS::NewStub(channel);
+        }
+    public:
+        Slave(std::string _master_port, std::string _routing_port){
+            master_port = _master_port; 
+            routing_port = _routing_port;
+
+            //Create stubs for the master and the routing servers
+            set_stub(master_stub_, "localhost:" + master_port);
+            set_stub(routing_stub_, "localhost:" + routing_port);
+        }
+
+        void RunSlave(char** argv) {
+            KeepAliveRequest keep_request;
+            KeepAliveReply keep_reply;
+            IReply replyStatus;
+            keep_request.set_ireplyvalue(0);
+            
+            //Every 3 sec send KeepAlive to server. If a send is unsucessfull retry .25 sec later.
+            //if that one does not work, notify the routing server, and restart the master.
+            while(1){
+                std::cout << "hi there\n";
+                sleep(3);
+                ClientContext context;
+                replyStatus.grpc_status = master_stub_->KeepAlive(&context, keep_request, &keep_reply);
+                
+                if ( !replyStatus.grpc_status.ok() ){
+                    std::cout << "hoe there\n";
+                    //Keep alive failed! Try again.
+                    sleep(.25);
+                    ClientContext context2;
+                    replyStatus.grpc_status = master_stub_->KeepAlive(&context2, keep_request, &keep_reply);
+                    if ( !replyStatus.grpc_status.ok() ){
+                        std::cout << "woah there\n";
+                        //Keep alive failed again, assume server is down.
+                        //Notify the routing server!
+
+                        ServerInfo info;
+                        info.set_port(master_port);
+                        info.set_hostname("localhost");
+                        
+                        //This loop keeps trying to message the router until sucessfull. Should work 1st time
+                        while( !replyStatus.grpc_status.ok() ){
+                            std::cout << "spam\n";
+                            ClientContext context3;
+                            replyStatus.grpc_status = routing_stub_->Crash(&context3, info, &keep_reply);
+                            if( !replyStatus.grpc_status.ok() ) sleep(2);
+                        }
+
+                        //restart the master here!
+                        int status = fork();
+                        if(status == 0){
+                            std::cout << "child\n";
+                            //child
+                            //Restart the master
+                            int return_int = execvp("./fbsd", argv);
+                            if(return_int == -1){
+                                std::cout << "Error: Execvp() failed!\n";
+                            }
+                        }
+                        //wait(&status);
+                        //wait(NULL);
+                    }
+                }
+            } //end while
+        } //end RunSlave
+};
+
+void SIGCHLD_handler(int sig){
+    wait(NULL);
+}q
 
 int main(int argc, char** argv) {
     std::string master_port = "5116";
     std::string routing_port = "5115";
-    //int opt = 0;
-    //while ((opt = getopt(argc, argv, "p:")) != -1){
-    //    switch(opt) {
-    //        case 'p':
-    //            port = optarg;break;
-    //        default:
-    //            std::cerr << "Invalid Command Line Argument\n";
-    //    }
-    //}
+
     if (argc != 3) {
-        fprintf(stderr, "usage: ./fbsd <master port> <routing port>\n");
+        fprintf(stderr, "usage: ./fbss <master port> <routing port>\n");
         return 1;
-    }
-    else {
+    }else {
         master_port = std::string(argv[1]);
         routing_port = std::string(argv[2]);
     }
-    RunSlave(port);
+
+    signal(SIGCHLD, SIGCHLD_handler);
+    Slave slave_server(master_port, routing_port);
+    slave_server.RunSlave(argv);
 
     return 0;
 };
