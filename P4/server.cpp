@@ -54,7 +54,8 @@ using namespace std;
 
 chrono::steady_clock::time_point checkTime;
 const float SLAVE_CHECK_CRASH_SECONDS = 20.0f;
-const int SLAVE_CHECK_LOOP_SECONDS = 4;
+const int SLAVE_CHECK_LOOP_SECONDS = 5;
+const int SLAVE_RESTART_SECONDS = 10;
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
@@ -550,6 +551,7 @@ private:
 
     //Keep alive message between master server and slave server
     Status KeepAlive(ServerContext* context, const KeepAliveRequest* request, KeepAliveReply* reply) override {
+        checkTime = chrono::steady_clock::now();
         reply->set_ireplyvalue(0);
         return Status::OK;
     }
@@ -593,16 +595,18 @@ void ChildReaper(int sig)
 
 void SlaveCheckLoop(const string& port, const string& routing_port)
 {
+    // Wait on start in case process was started by a slave
+    this_thread::sleep_for(chrono::seconds(SLAVE_CHECK_LOOP_SECONDS));
     while (true)
-    {
-		// Wait a little before checking
-        sleep(5);
-        
+    {        
         const int checkResult = SlaveClockCheck();
         
         if (checkResult == 1)
         {
             cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
+			
+            // Wait a little before checking again
+			this_thread::sleep_for(chrono::seconds(SLAVE_CHECK_LOOP_SECONDS));
         }
         else
         {
@@ -627,9 +631,13 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
             {
                 // Parent
                 // Handle SIGCHLD to prevent zombie processes
-                signal(SIGCHLD, SIG_IGN);
+                signal(SIGCHLD, ChildReaper);
             }
+
+            // Wait for process to start
+            this_thread::sleep_for(std::chrono::seconds(SLAVE_RESTART_SECONDS));
         }
+
     }
 }
 
