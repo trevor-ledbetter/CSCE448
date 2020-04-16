@@ -646,7 +646,7 @@ int main(int argc, char** argv) {
     //    }
     //}
     if (argc != 3) {
-        fprintf(stderr, "usage: ./fbsd <port number> <routing port number>\n");
+        fprintf(stderr, "usage: ./fbsd <port number> <routing port>\n");
         return 1;
     }
     else {
