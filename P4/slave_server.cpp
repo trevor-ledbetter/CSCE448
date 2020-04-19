@@ -114,7 +114,7 @@ class Slave{
 
 void SIGCHLD_handler(int sig){
     wait(NULL);
-}q
+}
 
 int main(int argc, char** argv) {
     std::string master_port = "5116";
