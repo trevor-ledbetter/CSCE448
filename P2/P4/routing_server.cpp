@@ -64,15 +64,20 @@ public:
      ****************************/
 
     Status Connect(ServerContext* context, const ClientConnect* connection, ServerInfo* response) override {
+        cout << "Received Connect request!" << endl;
         if(server_list.size() == 0){
             //No available servers
+            cout << "No servers available" << endl;
             response->set_ireplyvalue(5);
             return grpc::Status(grpc::StatusCode::UNAVAILABLE, "Unavailable Server");
         }else{
+            cout << "Sending host and port to client" << endl;
             response->set_hostname(available_server.hostname);
             response->set_port(available_server.port);
             response->set_ireplyvalue(0);
 
+            cout << "\tPort:     " << response->port() << "\n";
+            cout << "\tHostname: " << response->hostname() << "\n";
             //std::cout << "available server is: " << available_server.port << endl;
             return Status::OK;
         }
