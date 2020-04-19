@@ -53,7 +53,7 @@ using network::ServerInfo;
 using namespace std;
 
 chrono::steady_clock::time_point checkTime;
-const float SLAVE_CHECK_CRASH_SECONDS = 8.0f;
+const float SLAVE_CHECK_CRASH_SECONDS = 20.0f;
 const int SLAVE_CHECK_LOOP_SECONDS = 4;
 
 // Logic and data behind the server's behavior.
@@ -139,6 +139,11 @@ public:
         info.set_port(port);
 
         replyStatus.grpc_status = stub_->RegisterServer(&context, info, &reply);
+        if(replyStatus.grpc_status.ok()){
+            std::cout << "Registered server with router!" << endl;
+        }else{
+            std::cout << "Failed to register server with router!" << endl;
+        }
         return;
     }
 private:
@@ -597,7 +602,7 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
     while (true)
     {
 		// Wait a little before checking
-        sleep(5);
+        sleep(SLAVE_CHECK_LOOP_SECONDS);
         
         const int checkResult = SlaveClockCheck();
         
@@ -630,6 +635,7 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
                 // Handle SIGCHLD to prevent zombie processes
                 signal(SIGCHLD, SIG_IGN);
             }
+
         }
     }
 }

@@ -65,19 +65,17 @@ class Slave{
             //Every 3 sec send KeepAlive to server. If a send is unsucessfull retry .25 sec later.
             //if that one does not work, notify the routing server, and restart the master.
             while(1){
-                std::cout << "hi there\n";
+                std::cout << "Checking Master..\n";
                 sleep(3);
                 ClientContext context;
                 replyStatus.grpc_status = master_stub_->KeepAlive(&context, keep_request, &keep_reply);
                 
                 if ( !replyStatus.grpc_status.ok() ){
-                    std::cout << "hoe there\n";
                     //Keep alive failed! Try again.
                     sleep(.25);
                     ClientContext context2;
                     replyStatus.grpc_status = master_stub_->KeepAlive(&context2, keep_request, &keep_reply);
                     if ( !replyStatus.grpc_status.ok() ){
-                        std::cout << "woah there\n";
                         //Keep alive failed again, assume server is down.
                         //Notify the routing server!
 
@@ -87,16 +85,16 @@ class Slave{
                         
                         //This loop keeps trying to message the router until sucessfull. Should work 1st time
                         while( !replyStatus.grpc_status.ok() ){
-                            std::cout << "spam\n";
+                            std::cout << "Sent Crash message to routing server!\n";
                             ClientContext context3;
                             replyStatus.grpc_status = routing_stub_->Crash(&context3, info, &keep_reply);
                             if( !replyStatus.grpc_status.ok() ) sleep(2);
                         }
+                        std::cout << "Sent Crash message to routing server!\n";
 
                         //restart the master here!
                         int status = fork();
                         if(status == 0){
-                            std::cout << "child\n";
                             //child
                             //Restart the master
                             int return_int = execvp("./fbsd", argv);
