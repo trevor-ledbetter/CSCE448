@@ -73,6 +73,12 @@ elif [ "$1" = "c" -a ! -z "$2" -a ! -z "$3" ]; then
   MASTER_1=$2
   ROUTER=$3
   run_client
+elif [ "$1" = "z" ]; then
+  MASTER_1="6000"
+  MASTER_2="6100"
+  MASTER_3="6200"
+  ROUTER="7000"
+  run_all
 else
   echo "Usage:"
   echo "   Full (4 Machine) Deployment: ./launch.sh f [starting_port_number]"
