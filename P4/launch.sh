@@ -16,7 +16,7 @@ make_executables()
 master_slave()
 {
   make_executables
-  echo "Running Master and Slave server on port: $2 connected to router: $3"
+  echo "Running Master and Slave server on port: $MASTER_1 connected to router: $ROUTER"
   gnome-terminal -x /bin/sh -c "./fbsd $MASTER_1 $ROUTER"
   gnome-terminal -x /bin/sh -c "./fbss $MASTER_1 $ROUTER"
 }
