@@ -14,6 +14,8 @@
 #include <sys/stat.h>
 
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
 #include <grpc++/grpc++.h>
 #include "client.h"
 #include "network.grpc.pb.h"
@@ -49,6 +51,10 @@ using network::KeepAliveRequest;
 using network::ServerInfo;
 
 using namespace std;
+
+chrono::steady_clock::time_point checkTime;
+const float SLAVE_CHECK_CRASH_SECONDS = 20.0f;
+const int SLAVE_CHECK_LOOP_SECONDS = 4;
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
@@ -544,6 +550,7 @@ private:
 
     //Keep alive message between master server and slave server
     Status KeepAlive(ServerContext* context, const KeepAliveRequest* request, KeepAliveReply* reply) override {
+        checkTime = chrono::steady_clock::now();
         reply->set_ireplyvalue(0);
         return Status::OK;
     }
@@ -569,6 +576,64 @@ void RunServer(std::string port, std::string routing_port) {
     server->Wait();
 }
 
+int SlaveClockCheck()
+{
+    chrono::seconds timeSinceLastCheck = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - checkTime);
+    if (timeSinceLastCheck.count() > SLAVE_CHECK_CRASH_SECONDS)
+    {
+        cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Exceeded timeout on slave..." << endl;
+        return 0;
+    }
+    return 1;
+}
+
+void ChildReaper(int sig)
+{
+    wait(NULL);
+}
+
+void SlaveCheckLoop(const string& port, const string& routing_port)
+{
+    while (true)
+    {
+		// Wait a little before checking
+        sleep(5);
+        
+        const int checkResult = SlaveClockCheck();
+        
+        if (checkResult == 1)
+        {
+            cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
+        }
+        else
+        {
+            // Assume slave has crashed
+            cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
+            auto pid = fork();
+            if (pid == 0)
+            {
+                // Child
+                const char* slave_server_executable = "./fbss";
+                // TODO: Add arguments
+                const char* slave_server_arg1 = port.c_str();
+                const char* slave_server_arg2 = routing_port.c_str();
+
+                cout << "running this bit" << endl;
+                if (execl(slave_server_executable, slave_server_executable, slave_server_arg1, slave_server_arg2, (char*)NULL))
+                {
+                    exit(0);
+                }
+            }
+            else
+            {
+                // Parent
+                // Handle SIGCHLD to prevent zombie processes
+                signal(SIGCHLD, SIG_IGN);
+            }
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     std::string port = "5116";
     std::string routing_port = "5115";
@@ -582,14 +647,22 @@ int main(int argc, char** argv) {
     //    }
     //}
     if (argc != 3) {
-        fprintf(stderr, "usage: ./fbsd <port number> <routing port number>\n");
+        fprintf(stderr, "usage: ./fbsd <port number> <routing port>\n");
         return 1;
     }
     else {
         port = std::string(argv[1]);
         routing_port = std::string(argv[2]);
     }
+
+    checkTime = chrono::steady_clock::now();
+    // Start slave timeout loop
+    thread SlaveCheckThread(SlaveCheckLoop, port, routing_port);
+
     RunServer(port, routing_port);
+
+    // Join slave timeout loop
+    SlaveCheckThread.join();
 
     return 0;
 };

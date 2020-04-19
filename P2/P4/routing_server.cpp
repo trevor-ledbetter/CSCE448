@@ -96,6 +96,7 @@ public:
     }
 
     Status Crash(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
+        std::cout << "Crash!\n";
         masterServer crashed_server;
         crashed_server.hostname = server_info->hostname();
         crashed_server.port = server_info->port();
@@ -115,8 +116,8 @@ public:
                 available_server.hostname = server_list[0].hostname;
                 available_server.port = server_list[0].port;
             }else{
-                std::cout << "Error: No available servers!\n";
-                for(;;);
+                std::cout << "Currently no available servers, please wait...\n";
+                //for(;;);
             }
         }
         //simple response
@@ -146,17 +147,8 @@ void RunRouter(std::string port) {
 
 int main(int argc, char** argv) {
     std::string port = "5116";
-    //int opt = 0;
-    //while ((opt = getopt(argc, argv, "p:")) != -1){
-    //    switch(opt) {
-    //        case 'p':
-    //            port = optarg;break;
-    //        default:
-    //            std::cerr << "Invalid Command Line Argument\n";
-    //    }
-    //}
     if (argc != 2) {
-        fprintf(stderr, "usage: ./fbsd <port number>\n");
+        fprintf(stderr, "usage: ./fbrs <port number>\n");
         return 1;
     }
     else {
@@ -166,3 +158,87 @@ int main(int argc, char** argv) {
 
     return 0;
 };
+
+
+
+
+
+
+
+
+//input array X of size n
+
+//Indexing starts at 0
+LongestPalindrome(X[], n){
+    M[] //M is an n by n matrix, initialized w/ all 0's
+    for i=0 to n-1 {
+        //Initialize the diagonal of the matrix to 1's
+        M[i][i] = 1 
+    }
+
+    for i=2 to n {
+        for j=0 to n-i {
+            k = j+i-1
+            if X[j] == X[k] AND i==2
+                M[j][k] = 2
+            else if X[j] == X[k]   
+                M[j][k] = 2 + M[j+1][k-1]   
+            else
+                M[j][k] = max( M[j+1][k], M[j][k-1] )
+        }
+    }
+    return M[0][n-1]
+}
+
+
+
+
+LCS(b, X, i, j)
+    if i==0 or j==0
+        return
+    if b[i, j] ==
+
+
+
+
+LCS(i, j, X, Y, C, Return){
+    //Base Case
+    if C[i, j] == 0
+        return Return
+    if X[i] == Y[j]
+        Return.push_back(X[i])
+        LCS(i-1, j-1, X, Y, C, Return)
+    else if C[i-1, j] > C[i, j-1]
+        LCS(i-1, j, X, Y, C, Return)
+    else   
+        LCS(i, j-1, X, Y, C, Return)
+}   
+
+
+LongestPalindrome(X, n){
+    Y = Reverse(X, n)
+    C = LCS-Length(X, Y)
+    Return[] //Array of length n
+    LCS(n, n, X, Y, C, Return)
+    return Return
+}
+
+Reverse(A, n){
+    rev[] //array of size n
+    j = n
+    for i=1 to n{
+        rev[n] = A[i];
+        j = j-1
+    }
+    return rev
+}
+
+
+OPT(T, v){
+    if v == null
+        return 0
+    else if v.child == null)
+        return v.weight
+    else
+        return Max( OPT(T, v.child), v.weight+OPT(T, v.child->child)
+}
