@@ -66,14 +66,19 @@ public:
     Status Connect(ServerContext* context, const ClientConnect* connection, ServerInfo* response) override {
         if(server_list.size() == 0){
             //No available servers
+            cout << "No servers available" << endl;
             response->set_ireplyvalue(5);
             return grpc::Status(grpc::StatusCode::UNAVAILABLE, "Unavailable Server");
         }else{
+            cout << "Sending host and port to client" << endl;
             response->set_hostname(available_server.hostname);
             response->set_port(available_server.port);
             response->set_ireplyvalue(0);
 
-            //std::cout << "available server is: " << available_server.port << endl;
+            cout << "\tPort:     " << response->port() << "\n";
+            cout << "\tHostname: " << response->hostname() << "\n";
+            
+            std::cout << "Available server is: " << available_server.port << endl;
             return Status::OK;
         }
     }
@@ -91,7 +96,7 @@ public:
         if(server_list.size() == 1){ 
             available_server.hostname = server_list[0].hostname;
             available_server.port = server_list[0].port;
-            cout << "Server " << available_server.port << " is available.\n";
+            cout << "Server " << available_server.port << " is the available server.\n";
         }
 
         response->set_ireplyvalue(0);
@@ -118,7 +123,7 @@ public:
             if(server_list.size() > 0){
                 available_server.hostname = server_list[0].hostname;
                 available_server.port = server_list[0].port;
-                cout << "New available server: " << available_server.port << endl;
+                cout << "New available server is: " << available_server.port << endl;
 
             }else{
                 std::cout << "Currently no available servers, please wait...\n";

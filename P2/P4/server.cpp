@@ -53,8 +53,8 @@ using network::ServerInfo;
 using namespace std;
 
 chrono::steady_clock::time_point checkTime;
-const float SLAVE_CHECK_CRASH_SECONDS = 8.0f;
-const int SLAVE_CHECK_LOOP_SECONDS = 4;
+const float SLAVE_CHECK_CRASH_SECONDS = 13.0f;
+const int SLAVE_CHECK_LOOP_SECONDS = 5;
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
@@ -597,7 +597,7 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
     while (true)
     {
 		// Wait a little before checking
-        sleep(5);
+        sleep(SLAVE_CHECK_LOOP_SECONDS);
         
         const int checkResult = SlaveClockCheck();
         
