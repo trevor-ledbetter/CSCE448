@@ -73,7 +73,7 @@ public:
             response->set_port(available_server.port);
             response->set_ireplyvalue(0);
 
-            std::cout << "available server is: " << available_server.port << endl;
+            //std::cout << "available server is: " << available_server.port << endl;
             return Status::OK;
         }
     }
@@ -90,6 +90,7 @@ public:
         if(server_list.size() == 1){
             available_server.hostname = server_list[0].hostname;
             available_server.port = server_list[0].port;
+            cout << "Server " << available_server.port << " is available.\n";
         }
 
         response->set_ireplyvalue(0);
@@ -116,6 +117,8 @@ public:
             if(server_list.size() > 0){
                 available_server.hostname = server_list[0].hostname;
                 available_server.port = server_list[0].port;
+                cout << "New available server: " << available_server.port << endl;
+
             }else{
                 std::cout << "Currently no available servers, please wait...\n";
                 //for(;;);
