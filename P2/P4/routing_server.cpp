@@ -82,12 +82,13 @@ public:
         masterServer new_server;
         new_server.hostname = server_info->hostname();
         new_server.port = server_info->port();
-        
+        std::cout << "Register server: " << new_server.port << endl;
+
         //Add new_server to the list
         server_list.push_back(new_server);
 
         //if this is the first and/or only server make it the available one
-        if(server_list.size() == 1){
+        if(server_list.size() == 1){ 
             available_server.hostname = server_list[0].hostname;
             available_server.port = server_list[0].port;
             cout << "Server " << available_server.port << " is available.\n";

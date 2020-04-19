@@ -125,8 +125,9 @@ public:
         }
     }
 
-    void Register(string address){
-        set_stub("localhost:5115");
+    void Register(string routing_port, string port, string hostname){
+        std::string address = hostname + ":" + routing_port;
+        set_stub(address);
         
         ClientContext context;
         ServerInfo info;
@@ -135,7 +136,7 @@ public:
 
         info.set_ireplyvalue(0);
         info.set_hostname("localhost");
-        info.set_port("5116");
+        info.set_port(port);
 
         replyStatus.grpc_status = stub_->RegisterServer(&context, info, &reply);
         return;
@@ -571,7 +572,7 @@ void RunServer(std::string port, std::string routing_port) {
     std::cout << "Server listening on " << server_address << std::endl;
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
-    service.Register("localhost:" + routing_port);
+    service.Register(routing_port, port, "localhost");
     server->Wait();
 }
 
