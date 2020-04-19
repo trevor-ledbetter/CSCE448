@@ -53,9 +53,8 @@ using network::ServerInfo;
 using namespace std;
 
 chrono::steady_clock::time_point checkTime;
-const float SLAVE_CHECK_CRASH_SECONDS = 20.0f;
-const int SLAVE_CHECK_LOOP_SECONDS = 5;
-const int SLAVE_RESTART_SECONDS = 10;
+const float SLAVE_CHECK_CRASH_SECONDS = 8.0f;
+const int SLAVE_CHECK_LOOP_SECONDS = 4;
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
@@ -126,9 +125,9 @@ public:
         }
     }
 
-    void Register(string address){
-        std::cout << "print here?\n";
-        set_stub("localhost:5115");
+    void Register(string routing_port, string port, string hostname){
+        std::string address = hostname + ":" + routing_port;
+        set_stub(address);
         
         ClientContext context;
         ServerInfo info;
@@ -137,7 +136,7 @@ public:
 
         info.set_ireplyvalue(0);
         info.set_hostname("localhost");
-        info.set_port("5116");
+        info.set_port(port);
 
         replyStatus.grpc_status = stub_->RegisterServer(&context, info, &reply);
         return;
@@ -573,7 +572,7 @@ void RunServer(std::string port, std::string routing_port) {
     std::cout << "Server listening on " << server_address << std::endl;
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
-    service.Register("localhost:" + routing_port);
+    service.Register(routing_port, port, "localhost");
     server->Wait();
 }
 
@@ -595,18 +594,16 @@ void ChildReaper(int sig)
 
 void SlaveCheckLoop(const string& port, const string& routing_port)
 {
-    // Wait on start in case process was started by a slave
-    this_thread::sleep_for(chrono::seconds(SLAVE_CHECK_LOOP_SECONDS));
     while (true)
-    {        
+    {
+		// Wait a little before checking
+        sleep(5);
+        
         const int checkResult = SlaveClockCheck();
         
         if (checkResult == 1)
         {
             cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
-			
-            // Wait a little before checking again
-			this_thread::sleep_for(chrono::seconds(SLAVE_CHECK_LOOP_SECONDS));
         }
         else
         {
@@ -631,28 +628,16 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
             {
                 // Parent
                 // Handle SIGCHLD to prevent zombie processes
-                signal(SIGCHLD, ChildReaper);
+                signal(SIGCHLD, SIG_IGN);
             }
-
-            // Wait for process to start
-            this_thread::sleep_for(std::chrono::seconds(SLAVE_RESTART_SECONDS));
         }
-
     }
 }
 
 int main(int argc, char** argv) {
     std::string port = "5116";
     std::string routing_port = "5115";
-    //int opt = 0;
-    //while ((opt = getopt(argc, argv, "p:")) != -1){
-    //    switch(opt) {
-    //        case 'p':
-    //            port = optarg;break;
-    //        default:
-    //            std::cerr << "Invalid Command Line Argument\n";
-    //    }
-    //}
+
     if (argc != 3) {
         fprintf(stderr, "usage: ./fbsd <port number> <routing port>\n");
         return 1;
@@ -662,6 +647,7 @@ int main(int argc, char** argv) {
         routing_port = std::string(argv[2]);
     }
 
+    checkTime = chrono::steady_clock::now();
     // Start slave timeout loop
     thread SlaveCheckThread(SlaveCheckLoop, port, routing_port);
 

@@ -72,23 +72,26 @@ public:
             response->set_hostname(available_server.hostname);
             response->set_port(available_server.port);
             response->set_ireplyvalue(0);
+
+            //std::cout << "available server is: " << available_server.port << endl;
             return Status::OK;
         }
     }
 
     Status RegisterServer(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
-        std::cout << "registering yo motherfuckah!\n";
         masterServer new_server;
         new_server.hostname = server_info->hostname();
         new_server.port = server_info->port();
-        
+        std::cout << "Register server: " << new_server.port << endl;
+
         //Add new_server to the list
         server_list.push_back(new_server);
 
         //if this is the first and/or only server make it the available one
-        if(server_list.size() == 1){
+        if(server_list.size() == 1){ 
             available_server.hostname = server_list[0].hostname;
             available_server.port = server_list[0].port;
+            cout << "Server " << available_server.port << " is available.\n";
         }
 
         response->set_ireplyvalue(0);
@@ -115,6 +118,8 @@ public:
             if(server_list.size() > 0){
                 available_server.hostname = server_list[0].hostname;
                 available_server.port = server_list[0].port;
+                cout << "New available server: " << available_server.port << endl;
+
             }else{
                 std::cout << "Currently no available servers, please wait...\n";
                 //for(;;);
@@ -147,15 +152,6 @@ void RunRouter(std::string port) {
 
 int main(int argc, char** argv) {
     std::string port = "5116";
-    //int opt = 0;
-    //while ((opt = getopt(argc, argv, "p:")) != -1){
-    //    switch(opt) {
-    //        case 'p':
-    //            port = optarg;break;
-    //        default:
-    //            std::cerr << "Invalid Command Line Argument\n";
-    //    }
-    //}
     if (argc != 2) {
         fprintf(stderr, "usage: ./fbrs <port number>\n");
         return 1;

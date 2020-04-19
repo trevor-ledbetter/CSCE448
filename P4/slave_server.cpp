@@ -112,6 +112,7 @@ class Slave{
         } //end RunSlave
 };
 
+//Used to reap zombies created by fork() and execvp
 void SIGCHLD_handler(int sig){
     wait(NULL);
 }
