@@ -72,12 +72,13 @@ public:
             response->set_hostname(available_server.hostname);
             response->set_port(available_server.port);
             response->set_ireplyvalue(0);
+
+            std::cout << "available server is: " << available_server.port << endl;
             return Status::OK;
         }
     }
 
     Status RegisterServer(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
-        std::cout << "registering yo motherfuckah!\n";
         masterServer new_server;
         new_server.hostname = server_info->hostname();
         new_server.port = server_info->port();
@@ -158,87 +159,3 @@ int main(int argc, char** argv) {
 
     return 0;
 };
-
-
-
-
-
-
-
-
-//input array X of size n
-
-//Indexing starts at 0
-LongestPalindrome(X[], n){
-    M[] //M is an n by n matrix, initialized w/ all 0's
-    for i=0 to n-1 {
-        //Initialize the diagonal of the matrix to 1's
-        M[i][i] = 1 
-    }
-
-    for i=2 to n {
-        for j=0 to n-i {
-            k = j+i-1
-            if X[j] == X[k] AND i==2
-                M[j][k] = 2
-            else if X[j] == X[k]   
-                M[j][k] = 2 + M[j+1][k-1]   
-            else
-                M[j][k] = max( M[j+1][k], M[j][k-1] )
-        }
-    }
-    return M[0][n-1]
-}
-
-
-
-
-LCS(b, X, i, j)
-    if i==0 or j==0
-        return
-    if b[i, j] ==
-
-
-
-
-LCS(i, j, X, Y, C, Return){
-    //Base Case
-    if C[i, j] == 0
-        return Return
-    if X[i] == Y[j]
-        Return.push_back(X[i])
-        LCS(i-1, j-1, X, Y, C, Return)
-    else if C[i-1, j] > C[i, j-1]
-        LCS(i-1, j, X, Y, C, Return)
-    else   
-        LCS(i, j-1, X, Y, C, Return)
-}   
-
-
-LongestPalindrome(X, n){
-    Y = Reverse(X, n)
-    C = LCS-Length(X, Y)
-    Return[] //Array of length n
-    LCS(n, n, X, Y, C, Return)
-    return Return
-}
-
-Reverse(A, n){
-    rev[] //array of size n
-    j = n
-    for i=1 to n{
-        rev[n] = A[i];
-        j = j-1
-    }
-    return rev
-}
-
-
-OPT(T, v){
-    if v == null
-        return 0
-    else if v.child == null)
-        return v.weight
-    else
-        return Max( OPT(T, v.child), v.weight+OPT(T, v.child->child)
-}

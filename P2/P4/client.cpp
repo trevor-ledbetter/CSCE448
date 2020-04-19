@@ -61,12 +61,17 @@ class Client : public IClient
             stub_ = network::SNS::NewStub(channel);
             //stub_ = std::move(stub);
         }
+        void set_routing_stub(std::string address){
+            auto channel = grpc::CreateChannel(address, grpc::InsecureChannelCredentials());
+            routing_stub_ = network::SNS::NewStub(channel);
+            //stub_ = std::move(stub);
+        }
         
     protected:
         virtual int connectTo();
         virtual IReply processCommand(std::string& input);
         virtual void processTimeline();
-
+        int reconnectTo();
         /**
          * Posts to user and follower timeline on server
          * @param msg Message to post
@@ -103,6 +108,7 @@ class Client : public IClient
         // as a member variable.
         //std::unique_ptr<NameOfYourStubClass::Stub> stub_;
         std::unique_ptr<SNS::Stub> stub_;
+        std::unique_ptr<SNS::Stub> routing_stub_;
 
         std::thread chatUpdateThread;
         std::thread signalCheckingThread;
@@ -139,9 +145,8 @@ int main(int argc, char** argv) {
 
 int Client::getServer(){
     //use the routing server to get the port of an available server
-    std::cout << "begin get server\n";
     std::string address = this->hostname + ":" + this->routing_port;
-    set_stub(address); //sets Client's stub with a channel created with address
+    set_routing_stub(address); //sets Client's stub with a channel created with address
 
     ClientContext clientCtxt;
     ClientConnect connectionReq;
@@ -149,15 +154,15 @@ int Client::getServer(){
     IReply replyStatus;
 
     connectionReq.set_connectingclient(username);
-    replyStatus.grpc_status = stub_->Connect(&clientCtxt, connectionReq, &info);
+    replyStatus.grpc_status = routing_stub_->Connect(&clientCtxt, connectionReq, &info);
     while( !replyStatus.grpc_status.ok() ){
         //get a new available server from the routing server and try again
         sleep(2);
-        connectTo();
         ClientContext clientCtxt2; //for some reason this is necessary
-        replyStatus.grpc_status = stub_->Connect(&clientCtxt2, connectionReq, &info);
+        replyStatus.grpc_status = routing_stub_->Connect(&clientCtxt2, connectionReq, &info);
     }
     this->port = info.port();
+    this->hostname = info.hostname();
     return 1;
     /*if (replyStatus.grpc_status.ok()) {
         this->port = info.port();
@@ -185,17 +190,15 @@ int Client::connectTo()
     //use the routing server to get the port of an available server
     int get_server_status = getServer();
     if(get_server_status==-1){
-        std::cout << "yo yo yo chang\n";
         return -1;
     }
 
     std::string address = this->hostname + ":" + this->port;
     //Reset the stub with the available server's port
     set_stub(address);
-        std::cout << "hi\n";
 
     ClientContext clientCtxt;
-    ClientConnect connectionReq;
+    ClientConnect connectionReq; 
     ServerAllow serverResponse;
     IReply replyStatus;
 
@@ -221,10 +224,62 @@ int Client::connectTo()
         
         return 1;
     }else{
-        std::cout << "hoe\n";
         return -1; // return 1 if success, otherwise return -1
     }
 }
+
+int Client::reconnectTo()
+{
+	// ------------------------------------------------------------
+    // In this function, you are supposed to create a stub so that
+    // you call service methods in the processCommand/porcessTimeline
+    // functions. That is, the stub should be accessible when you want
+    // to call any service methods in those functions.
+    // I recommend you to have the stub as
+    // a member variable in your own Client class.
+    // Please refer to gRpc tutorial how to create a stub.
+	// ------------------------------------------------------------
+    
+    //use the routing server to get the port of an available server
+    int get_server_status = getServer();
+    if(get_server_status==-1){
+        return -1;
+    }
+
+    std::string address = this->hostname + ":" + this->port;
+    //Reset the stub with the available server's port
+    set_stub(address);
+
+    ClientContext clientCtxt;
+    ClientConnect connectionReq; 
+    ServerAllow serverResponse;
+    IReply replyStatus;
+
+    connectionReq.set_connectingclient(username);
+    replyStatus.grpc_status = stub_->InitConnect(&clientCtxt, connectionReq, &serverResponse);
+    while( !replyStatus.grpc_status.ok() ){
+        //get a new available server from the routing server and try again
+        sleep(2);
+        reconnectTo();
+        ClientContext clientCtxt2; //for some reason this is necessary
+        replyStatus.grpc_status = stub_->InitConnect(&clientCtxt2, connectionReq, &serverResponse);
+    }
+    replyStatus.comm_status = getStatus(serverResponse.ireplyvalue());
+    /*if (replyStatus.grpc_status.ok()) {
+        replyStatus.comm_status = getStatus(serverResponse.ireplyvalue());
+    }
+    else {
+        replyStatus.comm_status = FAILURE_UNKNOWN;
+    }*/
+
+    if (replyStatus.comm_status == SUCCESS) {
+        //signalCheckingThread = std::thread(&Client::handleDisconnect, this);
+        return 1;
+    }else{
+        return -1; // return 1 if success, otherwise return -1
+    }
+}
+
 
 IReply Client::processCommand(std::string& input)
 {
@@ -243,7 +298,7 @@ IReply Client::processCommand(std::string& input)
         while( !reply.grpc_status.ok() ){
             //get a new available server from the routing server and try again
             sleep(2);
-            connectTo();
+            reconnectTo();
             ClientContext clientCtxt2; //for some reason this is necessary
             reply.grpc_status = stub_->Follow(&clientCtxt2, followReq, &followRep);
         }
@@ -263,7 +318,7 @@ IReply Client::processCommand(std::string& input)
         while( !reply.grpc_status.ok() ){
             //get a new available server from the routing server and try again
             sleep(2);
-            connectTo();
+            reconnectTo();
             ClientContext clientCtxt2; //for some reason this is necessary
             reply.grpc_status = stub_->Unfollow(&clientCtxt2, unfollowReq, &unfollowRep);
         }
@@ -284,7 +339,7 @@ IReply Client::processCommand(std::string& input)
         while( !reply.grpc_status.ok() ){
             //get a new available server from the routing server and try again
             sleep(2);
-            connectTo();
+            reconnectTo();
             ClientContext clientCtxt2; //for some reason this is necessary
             reply.grpc_status = stub_->List(&clientCtxt2, listReq, &listRep);
         }
@@ -313,7 +368,7 @@ IReply Client::processCommand(std::string& input)
         while( !reply.grpc_status.ok() ){
             //get a new available server from the routing server and try again
             sleep(2);
-            connectTo();
+            reconnectTo();
             ClientContext clientCtxt2;
             reply.grpc_status = stub_->Update(&clientCtxt2, upReq, &upRep);
         }
@@ -394,7 +449,7 @@ IReply Client::sendPost(const std::string& msg)
     while( !reply.grpc_status.ok() ){
         //get a new available server from the routing server and try again
         sleep(2);
-        connectTo();
+        reconnectTo();
         ClientContext clientCtxt2;
         reply.grpc_status = stub_->SendPost(&clientCtxt2, post, &postRep);
     }
@@ -418,7 +473,7 @@ void Client::checkForUpdate()
     while( !stats.ok() ){
         //get a new available server from the routing server and try again
         sleep(2);
-        connectTo();
+        reconnectTo();
         ClientContext clientCtxt2;
         stats = stub_->Update(&clientCtxt2, request, &requestReply);
     }
@@ -469,7 +524,7 @@ void Client::handleDisconnect()
             while( !reply.ok() ){
                 //get a new available server from the routing server and try again
                 sleep(2);
-                connectTo();
+                reconnectTo();
                 ClientContext clientCtxt2;
                 reply = stub_->Disconnect(&clientCtxt2, connectReq, &serverRes);
             }

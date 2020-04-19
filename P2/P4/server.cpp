@@ -126,7 +126,6 @@ public:
     }
 
     void Register(string address){
-        std::cout << "print here?\n";
         set_stub("localhost:5115");
         
         ClientContext context;
@@ -637,15 +636,7 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
 int main(int argc, char** argv) {
     std::string port = "5116";
     std::string routing_port = "5115";
-    //int opt = 0;
-    //while ((opt = getopt(argc, argv, "p:")) != -1){
-    //    switch(opt) {
-    //        case 'p':
-    //            port = optarg;break;
-    //        default:
-    //            std::cerr << "Invalid Command Line Argument\n";
-    //    }
-    //}
+
     if (argc != 3) {
         fprintf(stderr, "usage: ./fbsd <port number> <routing port>\n");
         return 1;
