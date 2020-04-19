@@ -89,7 +89,7 @@ class Slave{
                             replyStatus.grpc_status = routing_stub_->Crash(&context3, info, &keep_reply);
                             if( !replyStatus.grpc_status.ok() ) sleep(2);
                         }
-                        std::cout << "Sent crash message to router.."
+                        std::cout << "Sent crash message to router.." << endl;
 
                         //restart the master here!
                         int status = fork();
@@ -97,7 +97,7 @@ class Slave{
                             std::cout << "child\n";
                             //child
                             //Restart the master
-                            std::cout << "Restarting master.."
+                            std::cout << "Restarting master.." << endl;
                             int return_int = execvp("./fbsd", argv);
                             if(return_int == -1){
                                 std::cout << "Error: Execvp() failed!\n";
