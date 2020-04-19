@@ -49,7 +49,7 @@ class Client : public IClient
         Client(const std::string& hname,
                const std::string& uname,
                const std::string& rp)
-            :hostname(hname), username(uname), routing_port(rp) {}
+            :hostname(hname), username(uname), routing_port(rp), bTimelineValid(false) {}
         ~Client() {
             if (chatUpdateThread.joinable()) {
                 chatUpdateThread.join();
@@ -112,6 +112,7 @@ class Client : public IClient
 
         std::thread chatUpdateThread;
         std::thread signalCheckingThread;
+        bool bTimelineValid;
         int getServer();
 
 };
@@ -239,7 +240,7 @@ int Client::reconnectTo()
     // a member variable in your own Client class.
     // Please refer to gRpc tutorial how to create a stub.
 	// ------------------------------------------------------------
-    
+
     //use the routing server to get the port of an available server
     int get_server_status = getServer();
     if(get_server_status==-1){
@@ -262,6 +263,7 @@ int Client::reconnectTo()
         sleep(2);
         reconnectTo();
         ClientContext clientCtxt2; //for some reason this is necessary
+        std::cout << "Running InitConnect on new server" << std::endl;
         replyStatus.grpc_status = stub_->InitConnect(&clientCtxt2, connectionReq, &serverResponse);
     }
     replyStatus.comm_status = getStatus(serverResponse.ireplyvalue());
@@ -274,6 +276,18 @@ int Client::reconnectTo()
 
     if (replyStatus.comm_status == SUCCESS) {
         //signalCheckingThread = std::thread(&Client::handleDisconnect, this);
+        // Invalidate timeline to break timeline loop
+        if (bTimelineValid)
+        {
+            bTimelineValid = false;
+			std::cout << "\n========= TINY SNS CLIENT =========\n";
+			std::cout << " Command Lists and Format:\n";
+			std::cout << " FOLLOW <username>\n";
+			std::cout << " UNFOLLOW <username>\n";
+			std::cout << " LIST\n";
+			std::cout << " TIMELINE\n";
+			std::cout << "=====================================\n";
+        }
         return 1;
     }else{
         return -1; // return 1 if success, otherwise return -1
@@ -423,10 +437,17 @@ void Client::processTimeline()
     checkForUpdate();
 
     // Spawn update handler thread
+    // Remove old if present
+    if (chatUpdateThread.joinable())
+    {
+        chatUpdateThread.join();
+    }
     chatUpdateThread = std::thread(&Client::updateTimeline, this);
 
+    bTimelineValid = true;
+
     // Get input from user continuously
-    while (true) {
+    while (bTimelineValid) {
         const std::string& msg = getPostMessage();
         const IReply reply = sendPost(msg);
         if (reply.comm_status != SUCCESS) {
