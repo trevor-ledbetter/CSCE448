@@ -54,7 +54,8 @@ using namespace std;
 
 chrono::steady_clock::time_point checkTime;
 const float SLAVE_CHECK_CRASH_SECONDS = 13.0f;
-const int SLAVE_CHECK_LOOP_SECONDS = 5;
+const int SLAVE_CHECK_LOOP_SECONDS = 9;
+std::string PROCESS_PORT = "";
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
@@ -84,7 +85,7 @@ public:
         {
             int status = mkdir(folder.c_str(), 0777);
             if(status != 0){
-                std::cout << "Error: Folder creation" << std::endl;
+                cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Error: Folder creation" << endl;
             }
         }
 
@@ -569,7 +570,7 @@ void RunServer(std::string port, std::string routing_port) {
     builder.RegisterService(&service);
     // Finally assemble the server.
     std::unique_ptr<Server> server(builder.BuildAndStart());
-    std::cout << "Server listening on " << server_address << std::endl;
+    cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Server listening on " << server_address << endl;
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
     service.Register(routing_port, port, "localhost");
@@ -581,7 +582,7 @@ int SlaveClockCheck()
     chrono::seconds timeSinceLastCheck = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - checkTime);
     if (timeSinceLastCheck.count() > SLAVE_CHECK_CRASH_SECONDS)
     {
-        cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Exceeded timeout on slave..." << endl;
+        cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Exceeded timeout on slave..." << endl;
         return 0;
     }
     return 1;
@@ -603,23 +604,31 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
         
         if (checkResult == 1)
         {
-            cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
+            cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
         }
         else
         {
             // Assume slave has crashed
-            cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
+            cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
             auto pid = fork();
             if (pid == 0)
             {
                 // Child
-                const char* slave_server_executable = "./fbss";
-                // TODO: Add arguments
-                const char* slave_server_arg1 = port.c_str();
-                const char* slave_server_arg2 = routing_port.c_str();
+                pid = fork();
+                if (pid == 0)
+                {
+                    // Grandchild
+					const char* slave_server_executable = "./fbss";
+					const char* slave_server_arg1 = port.c_str();
+					const char* slave_server_arg2 = routing_port.c_str();
 
-                cout << "running this bit" << endl;
-                if (execl(slave_server_executable, slave_server_executable, slave_server_arg1, slave_server_arg2, (char*)NULL))
+					if (execl(slave_server_executable, slave_server_executable, slave_server_arg1, slave_server_arg2, (char*)NULL))
+					{
+						cout << "\033[1;4;31m[ERROR(Master " << PROCESS_PORT << ")]:\033[0m " << "Failed to spawn new slave server" << endl;
+						exit(0);
+					}
+                }
+                else
                 {
                     exit(0);
                 }
@@ -628,7 +637,8 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
             {
                 // Parent
                 // Handle SIGCHLD to prevent zombie processes
-                signal(SIGCHLD, SIG_IGN);
+                //signal(SIGCHLD, SIG_IGN);
+                wait(NULL);
             }
         }
     }
@@ -650,6 +660,8 @@ int main(int argc, char** argv) {
     checkTime = chrono::steady_clock::now();
     // Start slave timeout loop
     thread SlaveCheckThread(SlaveCheckLoop, port, routing_port);
+
+    PROCESS_PORT = port;
 
     RunServer(port, routing_port);
 

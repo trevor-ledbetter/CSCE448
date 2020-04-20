@@ -65,7 +65,7 @@ class Slave{
             //Every 3 sec send KeepAlive to server. If a send is unsucessfull retry .25 sec later.
             //if that one does not work, notify the routing server, and restart the master.
             while(1){
-                std::cout << "Checking master..\n";
+                cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Checking master..." << endl;
                 sleep(3);
                 ClientContext context;
                 replyStatus.grpc_status = master_stub_->KeepAlive(&context, keep_request, &keep_reply);
@@ -87,21 +87,30 @@ class Slave{
                         while( !replyStatus.grpc_status.ok() ){
                             ClientContext context3;
                             replyStatus.grpc_status = routing_stub_->Crash(&context3, info, &keep_reply);
-                            if( !replyStatus.grpc_status.ok() ) sleep(2);
-                        }
-                        std::cout << "Sent crash message to router.." << endl;
+							if (!replyStatus.grpc_status.ok()) sleep(2);
+						}
+                        cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Sent Crash message to router" << endl;
 
                         //restart the master here!
                         int status = fork();
                         if(status == 0){
-                            std::cout << "child\n";
-                            //child
-                            //Restart the master
-                            std::cout << "Restarting master.." << endl;
-                            int return_int = execvp("./fbsd", argv);
-                            if(return_int == -1){
-                                std::cout << "Error: Execvp() failed!\n";
+							//child
+                            status = fork();
+                            if (status == 0) {
+                                // grandchild
+							    //Restart the master
+                                cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Restarting master" << endl;
+								int return_int = execvp("./fbsd", argv);
+								if (return_int == -1) {
+                                    cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Error: Execvp() failed!" << endl;
+								}
                             }
+                            else {
+                                exit(0);
+                            }
+                        }
+                        else {
+                            wait(NULL);
                         }
                         //wait(&status);
                         //wait(NULL);
@@ -128,7 +137,7 @@ int main(int argc, char** argv) {
         routing_port = std::string(argv[2]);
     }
 
-    signal(SIGCHLD, SIGCHLD_handler);
+    //signal(SIGCHLD, SIGCHLD_handler);
     Slave slave_server(master_port, routing_port);
     slave_server.RunSlave(argv);
 
