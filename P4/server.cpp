@@ -54,7 +54,7 @@ using namespace std;
 
 chrono::steady_clock::time_point checkTime;
 const float SLAVE_CHECK_CRASH_SECONDS = 13.0f;
-const int SLAVE_CHECK_LOOP_SECONDS = 5;
+const int SLAVE_CHECK_LOOP_SECONDS = 9;
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
@@ -581,7 +581,7 @@ int SlaveClockCheck()
     chrono::seconds timeSinceLastCheck = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - checkTime);
     if (timeSinceLastCheck.count() > SLAVE_CHECK_CRASH_SECONDS)
     {
-        cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Exceeded timeout on slave..." << endl;
+        cout << "\033[1;4;36m[MASTER]:\033[0m " << "Exceeded timeout on slave..." << endl;
         return 0;
     }
     return 1;
@@ -603,23 +603,32 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
         
         if (checkResult == 1)
         {
-            cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
+            cout << "\033[1;4;36m[MASTER]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
         }
         else
         {
             // Assume slave has crashed
-            cout << "\033[1;4;36m[DEBUG]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
+            cout << "\033[1;4;36m[MASTER]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
             auto pid = fork();
             if (pid == 0)
             {
                 // Child
-                const char* slave_server_executable = "./fbss";
-                // TODO: Add arguments
-                const char* slave_server_arg1 = port.c_str();
-                const char* slave_server_arg2 = routing_port.c_str();
+                pid = fork();
+                if (pid == 0)
+                {
+                    // Grandchild
+					const char* slave_server_executable = "./fbss";
+					const char* slave_server_arg1 = port.c_str();
+					const char* slave_server_arg2 = routing_port.c_str();
 
-                cout << "running this bit" << endl;
-                if (execl(slave_server_executable, slave_server_executable, slave_server_arg1, slave_server_arg2, (char*)NULL))
+					if (execl(slave_server_executable, slave_server_executable, slave_server_arg1, slave_server_arg2, (char*)NULL))
+					{
+					    cout << "" << endl;
+						cout << "\033[1;4;31m[ERROR]:\033[0m " << "running this bit" << endl;
+						exit(0);
+					}
+                }
+                else
                 {
                     exit(0);
                 }
@@ -628,7 +637,8 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
             {
                 // Parent
                 // Handle SIGCHLD to prevent zombie processes
-                signal(SIGCHLD, SIG_IGN);
+                //signal(SIGCHLD, SIG_IGN);
+                wait(NULL);
             }
         }
     }
