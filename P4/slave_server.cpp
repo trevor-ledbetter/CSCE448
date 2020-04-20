@@ -65,7 +65,7 @@ class Slave{
             //Every 3 sec send KeepAlive to server. If a send is unsucessfull retry .25 sec later.
             //if that one does not work, notify the routing server, and restart the master.
             while(1){
-                cout << "\033[1;4;35m[SLAVE]:\033[0m " << "Checking master..." << endl;
+                cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Checking master..." << endl;
                 sleep(3);
                 ClientContext context;
                 replyStatus.grpc_status = master_stub_->KeepAlive(&context, keep_request, &keep_reply);
@@ -89,22 +89,20 @@ class Slave{
                             replyStatus.grpc_status = routing_stub_->Crash(&context3, info, &keep_reply);
 							if (!replyStatus.grpc_status.ok()) sleep(2);
 						}
-                        cout << "\033[1;4;35m[SLAVE]:\033[0m " << "Sent Crash message to router" << endl;
+                        cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Sent Crash message to router" << endl;
 
                         //restart the master here!
                         int status = fork();
                         if(status == 0){
 							//child
-                            cout << "\033[1;4;35m[SLAVE]:\033[0m " << "child" << endl;
                             status = fork();
                             if (status == 0) {
                                 // grandchild
-                                cout << "\033[1;4;35m[SLAVE]:\033[0m " << "grandchild" << endl;
 							    //Restart the master
-                                cout << "\033[1;4;35m[SLAVE]:\033[0m " << "Restarting master" << endl;
+                                cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Restarting master" << endl;
 								int return_int = execvp("./fbsd", argv);
 								if (return_int == -1) {
-									std::cout << "Error: Execvp() failed!\n";
+                                    cout << "\033[1;4;35m[SLAVE " << master_port << "]:\033[0m " << "Error: Execvp() failed!" << endl;
 								}
                             }
                             else {

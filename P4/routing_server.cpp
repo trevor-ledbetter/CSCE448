@@ -33,6 +33,7 @@ using network::KeepAliveReply;
 
 using namespace std;
 
+std::string PROCESS_PORT = "";
 
 struct masterServer{
     std::string hostname;
@@ -66,19 +67,21 @@ public:
     Status Connect(ServerContext* context, const ClientConnect* connection, ServerInfo* response) override {
         if(server_list.size() == 0){
             //No available servers
-            cout << "No servers available" << endl;
+			cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "No servers available" << endl;
+
             response->set_ireplyvalue(5);
             return grpc::Status(grpc::StatusCode::UNAVAILABLE, "Unavailable Server");
         }else{
-            cout << "Sending host and port to client" << endl;
+            cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "Sending host and port to client" << endl;
             response->set_hostname(available_server.hostname);
             response->set_port(available_server.port);
             response->set_ireplyvalue(0);
 
-            cout << "\tPort:     " << response->port() << "\n";
-            cout << "\tHostname: " << response->hostname() << "\n";
+            cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "\tPort:     " << response->port() << endl;
+            cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "\tHostname: " << response->hostname() << endl;
             
-            std::cout << "Available server is: " << available_server.port << endl;
+			cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "Available server is: " << available_server.port << endl;
+
             return Status::OK;
         }
     }
@@ -87,7 +90,7 @@ public:
         masterServer new_server;
         new_server.hostname = server_info->hostname();
         new_server.port = server_info->port();
-        std::cout << "Register server: " << new_server.port << endl;
+        cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "Register server: " << new_server.port << endl;
 
         //Add new_server to the list
         server_list.push_back(new_server);
@@ -96,7 +99,7 @@ public:
         if(server_list.size() == 1){ 
             available_server.hostname = server_list[0].hostname;
             available_server.port = server_list[0].port;
-            cout << "Server " << available_server.port << " is the available server.\n";
+            cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "Server " << available_server.port << " is the available server." << endl;
         }
 
         response->set_ireplyvalue(0);
@@ -104,7 +107,7 @@ public:
     }
 
     Status Crash(ServerContext* context, const ServerInfo* server_info, KeepAliveReply* response) override {
-        std::cout << "Crash!\n";
+        cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "Crash detected on " << server_info->port() << endl;
         masterServer crashed_server;
         crashed_server.hostname = server_info->hostname();
         crashed_server.port = server_info->port();
@@ -123,10 +126,10 @@ public:
             if(server_list.size() > 0){
                 available_server.hostname = server_list[0].hostname;
                 available_server.port = server_list[0].port;
-                cout << "New available server is: " << available_server.port << endl;
+                cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "New available server is: " << available_server.port << endl;
 
             }else{
-                std::cout << "Currently no available servers, please wait...\n";
+                cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "Currently no available servers, please wait..." << endl;
                 //for(;;);
             }
         }
@@ -148,7 +151,7 @@ void RunRouter(std::string port) {
     builder.RegisterService(&service);
     // Finally assemble the server.
     std::unique_ptr<Server> server(builder.BuildAndStart());
-    std::cout << "Router listening on " << router_address << std::endl;
+    cout << "\033[1;4;32m[ROUTING " << PROCESS_PORT << "]:\033[0m " << "Router listening on " << router_address << endl;
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
 
@@ -164,6 +167,7 @@ int main(int argc, char** argv) {
     else {
         port = std::string(argv[1]);
     }
+    PROCESS_PORT = port;
     RunRouter(port);
 
     return 0;

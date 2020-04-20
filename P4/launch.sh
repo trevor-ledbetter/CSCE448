@@ -17,8 +17,8 @@ master_slave()
 {
   make_executables
   echo "Running Master and Slave server on port: $MASTER_1 connected to router: $ROUTER"
-  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_1 $ROUTER; exec bash"
-  gnome-terminal -- /bin/sh -c "./fbss $MASTER_1 $ROUTER; exec bash"
+  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_1 $ROUTER & ./fbss $MASTER_1 $ROUTER; exec bash"
+#  gnome-terminal -- /bin/sh -c "./fbss $MASTER_1 $ROUTER; exec bash"
 }
 
 # Handle Router
@@ -46,13 +46,19 @@ run_all()
   echo "   [2] Master on Port: $MASTER_2"
   echo "   [3] Master on Port: $MASTER_3"
   echo "   [4] Router on Port: $ROUTER"
-  gnome-terminal -- /bin/sh -c "./fbrs $ROUTER; exec bash"
-  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_1 $ROUTER; exec bash"
-  gnome-terminal -- /bin/sh -c "./fbss $MASTER_1 $ROUTER; exec bash"
-  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_2 $ROUTER; exec bash"
-  gnome-terminal -- /bin/sh -c "./fbss $MASTER_2 $ROUTER; exec bash"
-  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_3 $ROUTER; exec bash"
-  gnome-terminal -- /bin/sh -c "./fbss $MASTER_3 $ROUTER; exec bash"
+  gnome-terminal -- /bin/sh -c "./fbrs $ROUTER & \
+    ./fbsd $MASTER_1 $ROUTER & \
+    ./fbss $MASTER_1 $ROUTER & \
+    ./fbsd $MASTER_2 $ROUTER & \
+    ./fbss $MASTER_2 $ROUTER & \
+    ./fbsd $MASTER_3 $ROUTER & \
+    ./fbss $MASTER_3 $ROUTER ; exec bash"
+#  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_1 $ROUTER; exec bash"
+#  gnome-terminal -- /bin/sh -c "./fbss $MASTER_1 $ROUTER; exec bash"
+#  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_2 $ROUTER; exec bash"
+#  gnome-terminal -- /bin/sh -c "./fbss $MASTER_2 $ROUTER; exec bash"
+#  gnome-terminal -- /bin/sh -c "./fbsd $MASTER_3 $ROUTER; exec bash"
+#  gnome-terminal -- /bin/sh -c "./fbss $MASTER_3 $ROUTER; exec bash"
 }
 
 # Set from parameters
