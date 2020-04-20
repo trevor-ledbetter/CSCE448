@@ -85,7 +85,7 @@ public:
         {
             int status = mkdir(folder.c_str(), 0777);
             if(status != 0){
-                cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Error: Folder creation" << endl;
+                cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Error: Folder creation" << endl;
             }
         }
 
@@ -570,7 +570,7 @@ void RunServer(std::string port, std::string routing_port) {
     builder.RegisterService(&service);
     // Finally assemble the server.
     std::unique_ptr<Server> server(builder.BuildAndStart());
-    cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Server listening on " << server_address << endl;
+    cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Server listening on " << server_address << endl;
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
     service.Register(routing_port, port, "localhost");
@@ -582,7 +582,7 @@ int SlaveClockCheck()
     chrono::seconds timeSinceLastCheck = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - checkTime);
     if (timeSinceLastCheck.count() > SLAVE_CHECK_CRASH_SECONDS)
     {
-        cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Exceeded timeout on slave..." << endl;
+        cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Exceeded timeout on slave..." << endl;
         return 0;
     }
     return 1;
@@ -604,12 +604,12 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
         
         if (checkResult == 1)
         {
-            cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << "seconds." << endl;
+            cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << " seconds." << endl;
         }
         else
         {
             // Assume slave has crashed
-            cout << "\033[1;4;36m[MASTER " << PROCESS_PORT << "]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
+            cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
             auto pid = fork();
             if (pid == 0)
             {
