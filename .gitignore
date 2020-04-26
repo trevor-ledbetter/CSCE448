@@ -1,7 +1,7 @@
 # File created using '.gitignore Generator' for Visual Studio Code: https://bit.ly/vscode-gig
 
-# Created by https://www.gitignore.io/api/windows,c,c++,linux,visualstudio
-# Edit at https://www.gitignore.io/?templates=windows,c,c++,linux,visualstudio
+# Created by https://www.gitignore.io/api/windows,visualstudio,linux,c++,c,java,maven
+# Edit at https://www.gitignore.io/?templates=windows,visualstudio,linux,c++,c,java,maven
 
 ### C ###
 # Prerequisites
@@ -76,6 +76,31 @@ dkms.conf
 
 # Executables
 
+### Java ###
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
 ### Linux ###
 *~
 
@@ -90,6 +115,19 @@ dkms.conf
 
 # .nfs files are created when an open file is removed but is still being accessed
 .nfs*
+
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+.flattened-pom.xml
 
 ### Windows ###
 # Windows thumbnail cache files
@@ -199,7 +237,6 @@ StyleCopReport.xml
 *.tmp
 *.tmp_proj
 *_wpftmp.csproj
-*.log
 *.vspscc
 *.vssscc
 .builds
@@ -462,7 +499,7 @@ healthchecksdb
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 
-# End of https://www.gitignore.io/api/windows,c,c++,linux,visualstudio
+# End of https://www.gitignore.io/api/windows,visualstudio,linux,c++,c,java,maven
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 
@@ -476,4 +513,6 @@ client
 
 ### Visual Studio Project Folders
 vsproj/
+
+### Large tweets file
 P5/tweets2009-06.txt
