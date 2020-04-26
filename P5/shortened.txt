@@ -1,0 +1,100 @@
+total number:25
+T	2009-06-01 21:43:59
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-01 21:47:23
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-02 01:15:44
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-02 05:17:52
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-02 23:58:25
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-02 23:58:49
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-05 03:27:00
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-05 16:49:57
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-03-20 02:25:18
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-04-01 03:36:53
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-04-20 14:53:44
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-04-27 20:46:22
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-04-30 05:49:56
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-05-02 22:08:12
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-05-04 20:33:34
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-05-08 16:20:51
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-05-14 05:27:22
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-05-19 17:31:27
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-05-30 21:35:20
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-05-31 04:29:43
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-01 21:43:59
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-01 21:47:23
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-02 01:15:44
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-02 05:17:52
+U	http://twitter.com/burtonator
+W	No Post Title
+
+T	2009-06-02 23:58:25
+U	http://twitter.com/burtonator
+W	No Post Title
