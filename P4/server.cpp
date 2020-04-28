@@ -55,7 +55,7 @@ using namespace std;
 chrono::steady_clock::time_point checkTime;
 const float SLAVE_CHECK_CRASH_SECONDS = 13.0f;
 const int SLAVE_CHECK_LOOP_SECONDS = 9;
-std::string PROCESS_PORT = "";
+std::string PROCESS_ADDR = "";
 
 // Logic and data behind the server's behavior.
 class SNSImpl final : public SNS::Service {
@@ -85,7 +85,7 @@ public:
         {
             int status = mkdir(folder.c_str(), 0777);
             if(status != 0){
-                cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Error: Folder creation" << endl;
+                cout << "\033[1;4;36m[MASTER  " << PROCESS_ADDR << "]:\033[0m " << "Error: Folder creation" << endl;
             }
         }
 
@@ -126,8 +126,8 @@ public:
         }
     }
 
-    void Register(string routing_port, string port, string hostname){
-        std::string address = hostname + ":" + routing_port;
+    void Register(string machine_addr, string master_port, string routing_addr, string routing_port){
+        std::string address = routing_addr + ":" + routing_port;
         set_stub(address);
         
         ClientContext context;
@@ -136,8 +136,8 @@ public:
         IReply replyStatus;
 
         info.set_ireplyvalue(0);
-        info.set_hostname("localhost");
-        info.set_port(port);
+        info.set_hostname(machine_addr);
+        info.set_port(master_port);
 
         replyStatus.grpc_status = stub_->RegisterServer(&context, info, &reply);
         return;
@@ -558,8 +558,8 @@ private:
 
 }; //// END GRPC IMPLEMENTATION
 
-void RunServer(std::string port, std::string routing_port) {
-    std::string server_address("0.0.0.0:" + port);
+void RunServer(std::string machine_addr, std::string master_port, std::string routing_addr, std::string routing_port) {
+    std::string server_address(machine_addr + ":" + master_port);
     SNSImpl service;
     service.populateDB();
     ServerBuilder builder;
@@ -570,10 +570,10 @@ void RunServer(std::string port, std::string routing_port) {
     builder.RegisterService(&service);
     // Finally assemble the server.
     std::unique_ptr<Server> server(builder.BuildAndStart());
-    cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Server listening on " << server_address << endl;
+    cout << "\033[1;4;36m[MASTER  " << PROCESS_ADDR << "]:\033[0m " << "Server listening on " << server_address << endl;
     // Wait for the server to shutdown. Note that some other thread must be
     // responsible for shutting down the server for this call to ever return.
-    service.Register(routing_port, port, "localhost");
+    service.Register(machine_addr, master_port, routing_addr, routing_port);
     server->Wait();
 }
 
@@ -582,7 +582,7 @@ int SlaveClockCheck()
     chrono::seconds timeSinceLastCheck = chrono::duration_cast<chrono::seconds>(chrono::steady_clock::now() - checkTime);
     if (timeSinceLastCheck.count() > SLAVE_CHECK_CRASH_SECONDS)
     {
-        cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Exceeded timeout on slave..." << endl;
+        cout << "\033[1;4;36m[MASTER  " << PROCESS_ADDR << "]:\033[0m " << "Exceeded timeout on slave..." << endl;
         return 0;
     }
     return 1;
@@ -593,7 +593,7 @@ void ChildReaper(int sig)
     wait(NULL);
 }
 
-void SlaveCheckLoop(const string& port, const string& routing_port)
+void SlaveCheckLoop(char** argv)
 {
     while (true)
     {
@@ -604,12 +604,12 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
         
         if (checkResult == 1)
         {
-            cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << " seconds." << endl;
+            cout << "\033[1;4;36m[MASTER  " << PROCESS_ADDR << "]:\033[0m " << "Slave check succeeded, waiting for " << SLAVE_CHECK_LOOP_SECONDS << " seconds." << endl;
         }
         else
         {
             // Assume slave has crashed
-            cout << "\033[1;4;36m[MASTER  " << PROCESS_PORT << "]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
+            cout << "\033[1;4;36m[MASTER  " << PROCESS_ADDR << "]:\033[0m " << "Assuming slave crashed, starting new process" << endl;
             auto pid = fork();
             if (pid == 0)
             {
@@ -619,12 +619,10 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
                 {
                     // Grandchild
 					const char* slave_server_executable = "./fbss";
-					const char* slave_server_arg1 = port.c_str();
-					const char* slave_server_arg2 = routing_port.c_str();
 
-					if (execl(slave_server_executable, slave_server_executable, slave_server_arg1, slave_server_arg2, (char*)NULL))
+					if (execvp(slave_server_executable, argv))
 					{
-						cout << "\033[1;4;31m[ERROR(Master " << PROCESS_PORT << ")]:\033[0m " << "Failed to spawn new slave server" << endl;
+						cout << "\033[1;4;31m[ERROR(Master " << PROCESS_ADDR << ")]:\033[0m " << "Failed to spawn new slave server" << endl;
 						exit(0);
 					}
                 }
@@ -645,25 +643,29 @@ void SlaveCheckLoop(const string& port, const string& routing_port)
 }
 
 int main(int argc, char** argv) {
-    std::string port = "5116";
+    std::string master_addr = "10.0.2.1";
+    std::string master_port = "5116";
+    std::string routing_addr = "10.0.2.3";
     std::string routing_port = "5115";
 
-    if (argc != 3) {
-        fprintf(stderr, "usage: ./fbsd <port number> <routing port>\n");
+    if (argc != 5) {
+        fprintf(stderr, "usage: ./fbsd <machine address> <server port> <routing address> <routing port>\n");
         return 1;
     }
     else {
-        port = std::string(argv[1]);
-        routing_port = std::string(argv[2]);
+        master_addr = std::string(argv[1]);
+        master_port = std::string(argv[2]);
+        routing_addr = std::string(argv[3]);
+        routing_port = std::string(argv[4]);
     }
 
     checkTime = chrono::steady_clock::now();
     // Start slave timeout loop
-    thread SlaveCheckThread(SlaveCheckLoop, port, routing_port);
+    thread SlaveCheckThread(SlaveCheckLoop, argv);
 
-    PROCESS_PORT = port;
+    PROCESS_ADDR = master_addr;
 
-    RunServer(port, routing_port);
+    RunServer(master_addr, master_port, routing_addr, routing_port);
 
     // Join slave timeout loop
     SlaveCheckThread.join();

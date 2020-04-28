@@ -36,7 +36,9 @@ using namespace std;
 
 class Slave{
     private:
+        std::string machine_address;
         std::string master_port;
+        std::string routing_address;
         std::string routing_port;
 
         std::unique_ptr<SNS::Stub> master_stub_;
@@ -47,13 +49,15 @@ class Slave{
             stub_ = network::SNS::NewStub(channel);
         }
     public:
-        Slave(std::string _master_port, std::string _routing_port){
+        Slave(std::string _machine_address, std::string _master_port, std::string _routing_address, std::string _routing_port){
+            machine_address = _machine_address;
             master_port = _master_port; 
+            routing_address = _routing_address;
             routing_port = _routing_port;
 
             //Create stubs for the master and the routing servers
-            set_stub(master_stub_, "localhost:" + master_port);
-            set_stub(routing_stub_, "localhost:" + routing_port);
+            set_stub(master_stub_, machine_address + ":" + master_port);
+            set_stub(routing_stub_, routing_address + ":" + routing_port);
         }
 
         void RunSlave(char** argv) {
@@ -65,7 +69,7 @@ class Slave{
             //Every 3 sec send KeepAlive to server. If a send is unsucessfull retry .25 sec later.
             //if that one does not work, notify the routing server, and restart the master.
             while(1){
-                cout << "\033[1;4;35m[SLAVE   " << master_port << "]:\033[0m " << "Checking master..." << endl;
+                cout << "\033[1;4;35m[SLAVE   " << machine_address << "]:\033[0m " << "Checking master..." << endl;
                 sleep(3);
                 ClientContext context;
                 replyStatus.grpc_status = master_stub_->KeepAlive(&context, keep_request, &keep_reply);
@@ -81,7 +85,7 @@ class Slave{
 
                         ServerInfo info;
                         info.set_port(master_port);
-                        info.set_hostname("localhost");
+                        info.set_hostname(machine_address);
                         
                         //This loop keeps trying to message the router until sucessfull. Should work 1st time
                         while( !replyStatus.grpc_status.ok() ){
@@ -89,7 +93,7 @@ class Slave{
                             replyStatus.grpc_status = routing_stub_->Crash(&context3, info, &keep_reply);
 							if (!replyStatus.grpc_status.ok()) sleep(2);
 						}
-                        cout << "\033[1;4;35m[SLAVE   " << master_port << "]:\033[0m " << "Sent Crash message to router" << endl;
+                        cout << "\033[1;4;35m[SLAVE   " << machine_address << "]:\033[0m " << "Sent Crash message to router" << endl;
 
                         //restart the master here!
                         int status = fork();
@@ -99,10 +103,10 @@ class Slave{
                             if (status == 0) {
                                 // grandchild
 							    //Restart the master
-                                cout << "\033[1;4;35m[SLAVE   " << master_port << "]:\033[0m " << "Restarting master" << endl;
+                                cout << "\033[1;4;35m[SLAVE   " << machine_address << "]:\033[0m " << "Restarting master" << endl;
 								int return_int = execvp("./fbsd", argv);
 								if (return_int == -1) {
-                                    cout << "\033[1;4;35m[SLAVE   " << master_port << "]:\033[0m " << "Error: Execvp() failed!" << endl;
+                                    cout << "\033[1;4;35m[SLAVE   " << machine_address << "]:\033[0m " << "Error: Execvp() failed!" << endl;
 								}
                             }
                             else {
@@ -126,19 +130,23 @@ void SIGCHLD_handler(int sig){
 }
 
 int main(int argc, char** argv) {
+    std::string machine_address = "10.0.2.0";
     std::string master_port = "5116";
+    std::string routing_address = "10.0.2.0";
     std::string routing_port = "5115";
 
-    if (argc != 3) {
-        fprintf(stderr, "usage: ./fbss <master port> <routing port>\n");
+    if (argc != 5) {
+        fprintf(stderr, "usage: ./fbss <machine address> <master port> <routing address> <routing port>\n");
         return 1;
     }else {
-        master_port = std::string(argv[1]);
-        routing_port = std::string(argv[2]);
+        machine_address = std::string(argv[1]);
+        master_port = std::string(argv[2]);
+        routing_address = std::string(argv[3]);
+        routing_port = std::string(argv[4]);
     }
 
     //signal(SIGCHLD, SIGCHLD_handler);
-    Slave slave_server(master_port, routing_port);
+    Slave slave_server(machine_address, master_port, routing_address, routing_port);
     slave_server.RunSlave(argv);
 
     return 0;
